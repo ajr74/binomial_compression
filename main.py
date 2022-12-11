@@ -54,22 +54,22 @@ def process_window(bytes, reverse=False) -> int:
         assert rehydrated_bytes == bytes
 
     num_compressed_bits = 0
-    #log2N = math.ceil(math.log2(N))
-    #i = 0
-    #k_elapsed = 0
-    #total_percentage = 0.0
-    #for k in byteCounts:
-    #    if k >= 0:
-    #        percentage = (100.0 * k) / N
-    #        total_percentage += percentage
-    #        # payload_bits = math.ceil(math.log2(math.comb(N - k_elapsed, k)))
-    #        payload_bits = math.ceil(math.log2(C[N - k_elapsed][k]))
-    #        if payload_bits > 0:
-    #            compressed_bits = log2N + payload_bits
-    #            num_compressed_bits += compressed_bits
-    #        k_elapsed += k
-    #    i += 1
-    #assert total_percentage > 99.8
+    log2N = math.ceil(math.log2(N))
+    i = 0
+    k_elapsed = 0
+    total_percentage = 0.0
+    for k in byteCounts:
+        if k >= 0:
+            percentage = (100.0 * k) / N
+            total_percentage += percentage
+            # payload_bits = math.ceil(math.log2(math.comb(N - k_elapsed, k)))
+            payload_bits = math.ceil(math.log2(C[N - k_elapsed][k]))
+            if payload_bits > 0:
+                compressed_bits = log2N + payload_bits
+                num_compressed_bits += compressed_bits
+            k_elapsed += k
+        i += 1
+    assert total_percentage > 99.8
     return num_compressed_bits
 
 
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     print(f"Setting up binomial coefficient cache took {cache_builder_toc - cache_builder_tic:0.4f} seconds")
 
     estimation_tic = time.perf_counter()
-    bytesFromFile = np.fromfile("data/nuix_trust.pdf", dtype="uint8")
+    bytesFromFile = np.fromfile("data/E.coli", dtype="uint8")  # Canterbury corpus
     total_bytes_read = 0
     total_compressed_bits = 0
     window_bytes = []
