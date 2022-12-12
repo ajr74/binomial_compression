@@ -1,9 +1,19 @@
 from bitarray import bitarray
+from bitarray import util
 import bisect
 import numpy as np
 import math
 import time
 
+def get_index_set(bitset: bitarray) -> list:
+    index_vals = []
+    count = bitset.count()
+    index = len(bitset)
+    while count > 0:
+        index = util.rindex(bitset, 1, 0, index)
+        index_vals.insert(0, index)
+        count -= 1
+    return index_vals
 
 def process_window(bytes, reverse=False) -> int:
     N = len(bytes)
@@ -27,15 +37,22 @@ def process_window(bytes, reverse=False) -> int:
             bitset.setall(0)
             for i in to_add:
                 bitset[i] = 1
-            for i in to_remove[::-1]:
+            for i in to_remove[::-1]:  # remove from the end of bitset to avoid adjusting index values
                 bitset.pop(i)
             for i in to_add:
-                bisect.insort(to_remove, i)
+                bisect.insort(to_remove, i)  # add to_add to to_remove, keeping to_remove sorted
             byte_bitsets.append((byte_val, bitset))
 
         #assert k == bits_appended
     #toc = time.perf_counter()
     #print(f"Num bitsets = {len(bitsets)} took {toc - tic:0.4f} seconds")
+
+    # compute compression index values
+    #compression_info = []
+    #k_elapsed = 0
+    #for _, bitset in byte_bitsets:
+    #    compression_index = 0
+    #    pos_list = get_index_set(bitset)
 
     # try reversing
     if reverse:

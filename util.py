@@ -24,7 +24,7 @@ def bool_list_to_int(bool_list):
     for bit in bool_list:
         if bit:
             result += multiplier
-        multiplier  = multiplier >> 1
+        multiplier = multiplier >> 1
     return result
 
 def int_to_bool_list(num, numbits):  # writes HSB first
