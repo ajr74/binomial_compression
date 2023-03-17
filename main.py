@@ -25,9 +25,14 @@ def num_bits_required_to_represent(value: int) -> int:
 
 
 def int_to_bitarray(value: int, length: int) -> bitarray:
+    # TODO - inline
     assert value >= 0
-    binary_string = format(value, 'b').zfill(length)
-    return bitarray(binary_string)
+    return util.int2ba(value, length)
+
+
+def bitarray_to_int(bitset: bitarray) -> int:
+    # TODO - check. Then inline.
+    return util.ba2int(bitset)
 
 
 def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
