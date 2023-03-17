@@ -1,8 +1,9 @@
-from bitarray import bitarray
-from bitarray import util
 import bisect
 import math
 import time
+
+from bitarray import bitarray
+from bitarray import util
 
 
 def get_index_set(bitset: bitarray) -> list:
@@ -41,7 +42,6 @@ def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
         byte_positions[b].append(position)
         position += 1
 
-
     byte_bitsets = []
     to_remove = []
     for byte_val in range(0, 256):
@@ -58,7 +58,6 @@ def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
             byte_bitsets.append((byte_val, bitset))
 
     # compute compression index values and update buffer
-    compression_info = []
     total_percentage = 0
     num_compressed_bits = 0
     num_bits_for_k = num_bits_required_to_represent(max(byte_counts))
@@ -73,7 +72,6 @@ def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
             j += 1
 
         num_index_bits = num_bits_required_to_represent(compression_index)
-        compression_info.append((len(pos_list), compression_index, num_index_bits))
         _k = len(pos_list)
 
         percentage = (100.0 * _k) / num_bytes
@@ -84,7 +82,6 @@ def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
         num_compressed_bits += len(appendable_data)
         buffer += appendable_data
         k_elapsed += _k
-
 
     # try reversing
     if reverse:
@@ -109,7 +106,10 @@ def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
 
 if __name__ == '__main__':
 
-    bytes_per_window = 1024  # -1 for everything in one go
+    # TODO get params from command-line args
+    bytes_per_window = 1024
+    input_path = 'data/treasure_island.txt'
+    output_path = 'data/result.bin'
 
     # populate binomial coefficient lookup table with Pascal's rule
     cache_builder_tic = time.perf_counter()
@@ -129,16 +129,15 @@ if __name__ == '__main__':
     total_compressed_bits = 0
 
     out_buffer_bitarray = bitarray()
-    with open('data/treasure_island.txt', 'rb') as input_file:
-        with open('data/result.bin', 'wb') as output_file:
+    with open(input_path, 'rb') as input_file, open(output_path, 'wb') as output_file:
+        in_buffer_bytes = input_file.read(bytes_per_window)
+        while in_buffer_bytes:
+            total_bytes_read += len(in_buffer_bytes)
+            total_compressed_bits += compress(in_buffer_bytes, out_buffer_bitarray)
+            rubicon = (len(out_buffer_bitarray) // 8) << 3
+            output_file.write(out_buffer_bitarray[:rubicon].tobytes())
+            out_buffer_bitarray = out_buffer_bitarray[rubicon:]
             in_buffer_bytes = input_file.read(bytes_per_window)
-            while in_buffer_bytes:
-                total_bytes_read += len(in_buffer_bytes)
-                total_compressed_bits += compress(in_buffer_bytes, out_buffer_bitarray)
-                cut_off_point = (len(out_buffer_bitarray) // 8) << 3
-                output_file.write(out_buffer_bitarray[:cut_off_point].tobytes())
-                out_buffer_bitarray = out_buffer_bitarray[cut_off_point:]
-                in_buffer_bytes = input_file.read(bytes_per_window)
 
     compression_toc = time.perf_counter()
     print(f"Compressing took {compression_toc - compression_tic:0.4f} seconds")
