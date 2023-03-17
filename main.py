@@ -25,7 +25,7 @@ def num_bits_required_to_represent(value: int) -> int:
 
 
 def int_to_bitarray(value: int, length: int) -> bitarray:
-    # TODO - inline
+    # TODO - inline.
     assert value >= 0
     return util.int2ba(value, length)
 
@@ -64,19 +64,19 @@ def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
             bitset.setall(0)
             for i in to_add:
                 bitset[i] = 1
-            for i in to_remove[::-1]:  # remove from the end of bitset to avoid adjusting index values
+            for i in to_remove[::-1]:  # Remove from the end of bitset to avoid adjusting index values.
                 bitset.pop(i)
             for i in to_add:
-                bisect.insort(to_remove, i)  # add to_add to to_remove, keeping to_remove sorted
+                bisect.insort(to_remove, i)  # Add 'to_add' to 'to_remove', keeping 'to_remove' sorted.
             byte_bitsets.append((byte_val, bitset))
 
-    # compute compression index values and update buffer
+    # Compute compression index values and update buffer.
     total_percentage = 0
 
     num_bits_for_k = num_bits_required_to_represent(max(byte_counts))
     num_bits_for_k_bitarray = int_to_bitarray(num_bits_for_k, num_bits_for_num_bytes)
     buffer += num_bits_for_k_bitarray
-    num_compressed_bits += num_bits_for_num_bytes  # TODO - check this paragraph
+    num_compressed_bits += num_bits_for_num_bytes  # TODO - check this paragraph.
 
     k_elapsed = 0
     for _, bitset in byte_bitsets:
@@ -123,7 +123,7 @@ def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
 
 if __name__ == '__main__':
 
-    # TODO get params from command-line args
+    # TODO get params from command-line args.
     bytes_per_window = 1024
     input_path = 'data/treasure_island.txt'
     output_path = 'data/result.bin'
