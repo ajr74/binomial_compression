@@ -1,9 +1,9 @@
 from bitarray import bitarray
 from bitarray import util
 import bisect
-import numpy as np
 import math
 import time
+
 
 def get_index_set(bitset: bitarray) -> list:
     index_vals = []
@@ -15,25 +15,39 @@ def get_index_set(bitset: bitarray) -> list:
         count -= 1
     return index_vals
 
-def process_window(bytes, reverse=False) -> int:
-    N = len(bytes)
+
+def num_bits_required_to_represent(value: int) -> int:
+    assert value >= 0
+    if value == 0 or value == 1:
+        return 1
+    return math.floor(math.log2(value)) + 1
+
+
+def int_to_bitarray(value: int, length: int) -> bitarray:
+    assert value >= 0
+    binary_string = format(value, 'b').zfill(length)
+    return bitarray(binary_string)
+
+
+def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
+    num_bytes = len(input_bytes)
     byte_positions = []
     for i in range(0, 256):
         byte_positions.append([])
-    byteCounts = [0] * 256
+    byte_counts = [0] * 256
     position = 0
-    for b in bytes:
-        byteCounts[b] += 1
+    for b in input_bytes:
+        byte_counts[b] += 1
         byte_positions[b].append(position)
         position += 1
 
-    #tic = time.perf_counter()
+
     byte_bitsets = []
     to_remove = []
     for byte_val in range(0, 256):
         to_add = byte_positions[byte_val]
         if len(to_add) > 0:
-            bitset = bitarray(N)
+            bitset = bitarray(num_bytes)
             bitset.setall(0)
             for i in to_add:
                 bitset[i] = 1
@@ -43,50 +57,53 @@ def process_window(bytes, reverse=False) -> int:
                 bisect.insort(to_remove, i)  # add to_add to to_remove, keeping to_remove sorted
             byte_bitsets.append((byte_val, bitset))
 
-        #assert k == bits_appended
-    #toc = time.perf_counter()
-    #print(f"Num bitsets = {len(bitsets)} took {toc - tic:0.4f} seconds")
+    # compute compression index values and update buffer
+    compression_info = []
+    total_percentage = 0
+    num_compressed_bits = 0
+    num_bits_for_k = num_bits_required_to_represent(max(byte_counts))
+    k_elapsed = 0
+    for _, bitset in byte_bitsets:
+        compression_index = 0
+        pos_list = get_index_set(bitset)
+        j = 1
+        for position in pos_list:
+            if position >= j:
+                compression_index += C[position][j]
+            j += 1
 
-    # compute compression index values
-    #compression_info = []
-    #k_elapsed = 0
-    #for _, bitset in byte_bitsets:
-    #    compression_index = 0
-    #    pos_list = get_index_set(bitset)
+        num_index_bits = num_bits_required_to_represent(compression_index)
+        compression_info.append((len(pos_list), compression_index, num_index_bits))
+        _k = len(pos_list)
+
+        percentage = (100.0 * _k) / num_bytes
+        total_percentage += percentage
+        max_payload_bits = num_bits_required_to_represent(C[num_bytes - k_elapsed][_k])
+        assert max_payload_bits >= num_index_bits
+        appendable_data = int_to_bitarray(_k, num_bits_for_k) + int_to_bitarray(compression_index, max_payload_bits)
+        num_compressed_bits += len(appendable_data)
+        buffer += appendable_data
+        k_elapsed += _k
+
 
     # try reversing
     if reverse:
-        occupied_positions = bitarray(N)
+        occupied_positions = bitarray(num_bytes)
         occupied_positions.setall(0)
-        rehydrated_bytes = [0] * N
+        rehydrated_bytes = [0] * num_bytes
         for byte_val, bitset in byte_bitsets:
             inner_i = 0
-            for outer_i in range(0, N):
+            for outer_i in range(0, num_bytes):
                 if occupied_positions[outer_i]:
                     continue
                 if bitset[inner_i]:
                     rehydrated_bytes[outer_i] = byte_val
                     occupied_positions[outer_i] = 1
                 inner_i += 1
-        assert rehydrated_bytes == bytes
-
-    num_compressed_bits = 0
-    log2N = math.ceil(math.log2(N))
-    i = 0
-    k_elapsed = 0
-    total_percentage = 0.0
-    for k in byteCounts:
-        if k >= 0:
-            percentage = (100.0 * k) / N
-            total_percentage += percentage
-            # payload_bits = math.ceil(math.log2(math.comb(N - k_elapsed, k)))
-            payload_bits = math.ceil(math.log2(C[N - k_elapsed][k]))
-            if payload_bits > 0:
-                compressed_bits = log2N + payload_bits
-                num_compressed_bits += compressed_bits
-            k_elapsed += k
-        i += 1
+        assert rehydrated_bytes == input_bytes
+        
     assert total_percentage > 99.8
+    assert k_elapsed == num_bytes
     return num_compressed_bits
 
 
@@ -94,9 +111,7 @@ if __name__ == '__main__':
 
     bytes_per_window = 1024  # -1 for everything in one go
 
-    numBitsInWindow = 8 * bytes_per_window
     # populate binomial coefficient lookup table with Pascal's rule
-
     cache_builder_tic = time.perf_counter()
     C = [[1]]
     for n in range(1, bytes_per_window + 1):
@@ -109,29 +124,28 @@ if __name__ == '__main__':
     cache_builder_toc = time.perf_counter()
     print(f"Setting up binomial coefficient cache took {cache_builder_toc - cache_builder_tic:0.4f} seconds")
 
-    estimation_tic = time.perf_counter()
-    bytesFromFile = np.fromfile("data/E.coli", dtype="uint8")  # Canterbury corpus
+    compression_tic = time.perf_counter()
     total_bytes_read = 0
     total_compressed_bits = 0
-    window_bytes = []
-    for b in bytesFromFile:
-        total_bytes_read += 1
-        window_bytes.append(b)
-        if len(window_bytes) == bytes_per_window:
-            total_compressed_bits += process_window(window_bytes)
-            window_bytes.clear()
-    # tidy up last window (if it's not empty)
-    if len(window_bytes) > 0:
-        print("Last window: NOT empty!")
-        total_compressed_bits += process_window(window_bytes)
-        window_bytes.clear()
-    else:
-        print("Last window: empty!")
-    estimation_toc = time.perf_counter()
-    print(f"Providing estimates took {estimation_toc - estimation_tic:0.4f} seconds")
+
+    out_buffer_bitarray = bitarray()
+    with open('data/treasure_island.txt', 'rb') as input_file:
+        with open('data/result.bin', 'wb') as output_file:
+            in_buffer_bytes = input_file.read(bytes_per_window)
+            while in_buffer_bytes:
+                total_bytes_read += len(in_buffer_bytes)
+                total_compressed_bits += compress(in_buffer_bytes, out_buffer_bitarray)
+                cut_off_point = (len(out_buffer_bitarray) // 8) << 3
+                output_file.write(out_buffer_bitarray[:cut_off_point].tobytes())
+                out_buffer_bitarray = out_buffer_bitarray[cut_off_point:]
+                in_buffer_bytes = input_file.read(bytes_per_window)
+
+    compression_toc = time.perf_counter()
+    print(f"Compressing took {compression_toc - compression_tic:0.4f} seconds")
 
     total_bits = total_bytes_read << 3
     print(f'total bytes (raw): {total_bytes_read}')
     total_compressed_bytes = total_compressed_bits // 8
     print(f'total bytes (compressed): {total_compressed_bytes}')
-    print(f'ratio: {(100.0 * total_compressed_bits)/total_bits:0.2f}%')
+    print(f'space saving: {100 * (1 - total_compressed_bits / total_bits):0.2f}%')
+    
