@@ -32,6 +32,8 @@ def int_to_bitarray(value: int, length: int) -> bitarray:
 
 def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
     num_bytes = len(input_bytes)
+    num_bits_for_num_bytes = num_bits_required_to_represent(num_bytes)
+
     byte_positions = []
     for i in range(0, 256):
         byte_positions.append([])
@@ -41,6 +43,12 @@ def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
         byte_counts[b] += 1
         byte_positions[b].append(position)
         position += 1
+
+    existence_bitarray = bitarray()
+    for c in byte_counts:
+        existence_bitarray.append(c > 0)
+    buffer += existence_bitarray
+    num_compressed_bits = 256
 
     byte_bitsets = []
     to_remove = []
@@ -59,8 +67,12 @@ def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
 
     # compute compression index values and update buffer
     total_percentage = 0
-    num_compressed_bits = 0
+
     num_bits_for_k = num_bits_required_to_represent(max(byte_counts))
+    num_bits_for_k_bitarray = int_to_bitarray(num_bits_for_k, num_bits_for_num_bytes)
+    buffer += num_bits_for_k_bitarray
+    num_compressed_bits += num_bits_for_num_bytes  # TODO - check this paragraph
+
     k_elapsed = 0
     for _, bitset in byte_bitsets:
         compression_index = 0
