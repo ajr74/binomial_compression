@@ -35,9 +35,25 @@ def bitarray_to_int(bitset: bitarray) -> int:
     return util.ba2int(bitset)
 
 
-def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
+def decompress(input_bytes: bytes): #  -> bytes:
+    magic_num = 11 # TODO replace!!
+    tmp = bitarray()
+    tmp.frombytes(input_bytes)
+    existence_bitarray = tmp[:256]
+    num_bits_for_each_k_val = bitarray_to_int(tmp[256:256+11])
+
+    iterations = existence_bitarray.count()
+    my_count = 0
+    for bit in existence_bitarray:
+        my_count += bit
+    assert iterations == my_count
+    return None
+
+
+def compress(input_bytes: bytes, reverse=False) -> bytes:
     num_bytes = len(input_bytes)
     num_bits_for_num_bytes = num_bits_required_to_represent(num_bytes)
+    result = bitarray()
 
     byte_positions = []
     for i in range(0, 256):
@@ -52,7 +68,7 @@ def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
     existence_bitarray = bitarray()
     for c in byte_counts:
         existence_bitarray.append(c > 0)
-    buffer += existence_bitarray
+    result += existence_bitarray
     num_compressed_bits = 256
 
     byte_bitsets = []
@@ -75,7 +91,7 @@ def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
 
     num_bits_for_k = num_bits_required_to_represent(max(byte_counts))
     num_bits_for_k_bitarray = int_to_bitarray(num_bits_for_k, num_bits_for_num_bytes)
-    buffer += num_bits_for_k_bitarray
+    result += num_bits_for_k_bitarray
     num_compressed_bits += num_bits_for_num_bytes  # TODO - check this paragraph.
 
     k_elapsed = 0
@@ -97,7 +113,7 @@ def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
         assert max_payload_bits >= num_index_bits
         appendable_data = int_to_bitarray(_k, num_bits_for_k) + int_to_bitarray(compression_index, max_payload_bits)
         num_compressed_bits += len(appendable_data)
-        buffer += appendable_data
+        result += appendable_data
         k_elapsed += _k
 
     # try reversing
@@ -118,15 +134,16 @@ def compress(input_bytes, buffer: bitarray, reverse=False) -> int:
         
     assert total_percentage > 99.8
     assert k_elapsed == num_bytes
-    return num_compressed_bits
+    return result.tobytes()
 
 
 if __name__ == '__main__':
 
     # TODO get params from command-line args.
-    bytes_per_window = 1024
+    bytes_per_window = 1024 * 1
     input_path = 'data/treasure_island.txt'
     output_path = 'data/result.bin'
+    reassemble_path = 'data/reassemble.bin'
 
     # populate binomial coefficient lookup table with Pascal's rule
     cache_builder_tic = time.perf_counter()
@@ -143,17 +160,19 @@ if __name__ == '__main__':
 
     compression_tic = time.perf_counter()
     total_bytes_read = 0
-    total_compressed_bits = 0
+    total_compressed_bytes = 0
+    num_bytes_for_writing_num_window_bytes = 2
 
-    out_buffer_bitarray = bitarray()
     with open(input_path, 'rb') as input_file, open(output_path, 'wb') as output_file:
         in_buffer_bytes = input_file.read(bytes_per_window)
         while in_buffer_bytes:
             total_bytes_read += len(in_buffer_bytes)
-            total_compressed_bits += compress(in_buffer_bytes, out_buffer_bitarray)
-            rubicon = (len(out_buffer_bitarray) // 8) << 3
-            output_file.write(out_buffer_bitarray[:rubicon].tobytes())
-            out_buffer_bitarray = out_buffer_bitarray[rubicon:]
+            compressed_bytes = compress(in_buffer_bytes)
+            num_compressed_bytes = len(compressed_bytes)
+            total_compressed_bytes += num_bytes_for_writing_num_window_bytes + num_compressed_bytes
+            num_compressed_bytes_as_bytes = num_compressed_bytes.to_bytes(num_bytes_for_writing_num_window_bytes, 'big')
+            output_file.write(num_compressed_bytes_as_bytes)
+            output_file.write(compressed_bytes)
             in_buffer_bytes = input_file.read(bytes_per_window)
 
     compression_toc = time.perf_counter()
@@ -161,7 +180,24 @@ if __name__ == '__main__':
 
     total_bits = total_bytes_read << 3
     print(f'total bytes (raw): {total_bytes_read}')
-    total_compressed_bytes = total_compressed_bits // 8
     print(f'total bytes (compressed): {total_compressed_bytes}')
-    print(f'space saving: {100 * (1 - total_compressed_bits / total_bits):0.2f}%')
+    print(f'space saving: {100 * (1 - total_compressed_bytes / total_bytes_read):0.2f}%')
+
+    # Try reading back
+
+    num_bytes_read = 0
+    with open(output_path, 'rb') as output_file, open(reassemble_path, 'wb') as reassemble_file:
+        size_bytes = output_file.read(2)
+        while size_bytes:
+            size = int.from_bytes(size_bytes, 'big')
+            payload_bytes = output_file.read(size)
+            num_bytes_read += 2 + len(payload_bytes)
+            decompress(payload_bytes)
+            #print(f'Payload size declared: {size}. Actual: {len(payload_bytes)}')
+            size_bytes = output_file.read(2)
+
+    print(f"Num bytes read back in: {num_bytes_read}")
+
+
+
     
