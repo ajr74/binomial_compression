@@ -1,5 +1,7 @@
 import bisect
+import hashlib
 import math
+import os
 import time
 
 from bitarray import bitarray
@@ -43,34 +45,23 @@ def num_bits_required_to_represent(value: int) -> int:
     return math.floor(math.log2(value)) + 1
 
 
-def int_to_bitarray(value: int, length: int) -> bitarray:
-    # TODO - inline.
-    assert value >= 0
-    return util.int2ba(value, length)
-
-
-def bitarray_to_int(bitset: bitarray) -> int:
-    # TODO - check. Then inline.
-    return util.ba2int(bitset)
-
-
 def decompress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
 
-    tmp = bitarray()
-    tmp.frombytes(input_bytes)
+    input_bits = bitarray()
+    input_bits.frombytes(input_bytes)
 
     start = 0
     finish = max_num_bits_for_window_size
-    num_window_bytes = bitarray_to_int(tmp[start:finish])
+    num_window_bytes = util.ba2int(input_bits[start:finish])
     num_bits_for_max_k = num_bits_required_to_represent(num_window_bytes)
 
     start = finish
     finish += 256
-    existence_bitarray = tmp[start:finish]
+    existence_bitarray = input_bits[start:finish]
 
     start = finish
     finish += num_bits_for_max_k
-    num_bits_for_each_k_val = bitarray_to_int(tmp[start:finish])
+    num_bits_for_each_k_val = util.ba2int(input_bits[start:finish])
 
     byte_val = 0
     byte_bitsets = []
@@ -81,17 +72,15 @@ def decompress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
             # read k
             start = finish
             finish += num_bits_for_each_k_val
-            _k = bitarray_to_int(tmp[start:finish])
+            _k = util.ba2int(input_bits[start:finish])
             max_payload_bits = num_bits_required_to_represent(C[num_window_bytes - k_elapsed][_k])
-
             # read compression index
             start = finish
             finish += max_payload_bits
-            compression_index = bitarray_to_int(tmp[start:finish])
+            compression_index = util.ba2int(input_bits[start:finish])
             res = compression_index_to_bitarray(compression_index, _k, num_window_bytes - k_elapsed)
             byte_bitsets.append((byte_val, res))
             k_elapsed += _k
-
         byte_val += 1
 
     occupied_positions = bitarray(num_window_bytes)
@@ -115,10 +104,10 @@ def compress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
     num_bits_for_num_bytes = num_bits_required_to_represent(num_bytes)
 
     result = bitarray()
-    result += int_to_bitarray(num_bytes, max_num_bits_for_window_size)
+    result += util.int2ba(num_bytes, max_num_bits_for_window_size)
 
     byte_positions = []
-    for i in range(0, 256):
+    for _ in range(0, 256):
         byte_positions.append([])
     byte_counts = [0] * 256
     position = 0
@@ -149,7 +138,7 @@ def compress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
             byte_bitsets.append((byte_val, bitset))
 
     num_bits_for_k = num_bits_required_to_represent(max(byte_counts))
-    num_bits_for_k_bitarray = int_to_bitarray(num_bits_for_k, num_bits_for_num_bytes)
+    num_bits_for_k_bitarray = util.int2ba(num_bits_for_k, num_bits_for_num_bytes)
     result += num_bits_for_k_bitarray
     num_compressed_bits += num_bits_for_num_bytes  # TODO - check this paragraph.
 
@@ -165,7 +154,7 @@ def compress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
 
         _k = len(pos_list)
         max_payload_bits = num_bits_required_to_represent(C[num_bytes - k_elapsed][_k])
-        appendable_data = int_to_bitarray(_k, num_bits_for_k) + int_to_bitarray(compression_index, max_payload_bits)  # TODO - do we need to write the last payload? It's seemingly always 0.
+        appendable_data = util.int2ba(_k, num_bits_for_k) + util.int2ba(compression_index, max_payload_bits)  # TODO - do we need to write the last payload? It's seemingly always 0.
         num_compressed_bits += len(appendable_data)
         result += appendable_data
         k_elapsed += _k
@@ -176,9 +165,9 @@ def compress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
 if __name__ == '__main__':
 
     # TODO get params from command-line args.
-    bytes_per_window = 1024 * 2
+    bytes_per_window = 1024
     num_bits_for_bytes_per_window = num_bits_required_to_represent(bytes_per_window)
-    input_path = 'data/result1.bin'
+    input_path = 'data/treasure_island.txt'
     output_path = 'data/result.bin'
     reassemble_path = 'data/reassemble.bin'
 
@@ -200,8 +189,10 @@ if __name__ == '__main__':
     total_compressed_bytes = 0
     num_bytes_for_writing_num_window_bytes = 2
 
+    digest_in = hashlib.md5()
     with open(input_path, 'rb') as input_file, open(output_path, 'wb') as output_file:
         in_buffer_bytes = input_file.read(bytes_per_window)
+        digest_in.update(in_buffer_bytes)
         while in_buffer_bytes:
             total_bytes_read += len(in_buffer_bytes)
             compressed_bytes = compress(in_buffer_bytes, num_bits_for_bytes_per_window)
@@ -211,11 +202,15 @@ if __name__ == '__main__':
             output_file.write(num_compressed_bytes_as_bytes)
             output_file.write(compressed_bytes)
             in_buffer_bytes = input_file.read(bytes_per_window)
+            digest_in.update(in_buffer_bytes)
+        output_file.write(digest_in.digest())  # append the original 16-byte MD5 to the very end of the file.
+        total_compressed_bytes += 16
+
+    print(f'Input MD5: {digest_in.hexdigest()}')
 
     compression_toc = time.perf_counter()
     print(f"Compressing took {compression_toc - compression_tic:0.4f} seconds")
 
-    total_bits = total_bytes_read << 3
     print(f'total bytes (raw): {total_bytes_read}')
     print(f'total bytes (compressed): {total_compressed_bytes}')
     print(f'space saving: {100 * (1 - total_compressed_bytes / total_bytes_read):0.2f}%')
@@ -224,16 +219,26 @@ if __name__ == '__main__':
 
     num_bytes_read = 0
     decompression_tic = time.perf_counter()
+    file_size = os.stat(output_path).st_size
+    digest_out = hashlib.md5()
     with open(output_path, 'rb') as output_file, open(reassemble_path, 'wb') as reassemble_file:
-        size_bytes = output_file.read(2)
+        size_bytes = output_file.read(2)  # TODO remove hard-coded stuff
         while size_bytes:
             size = int.from_bytes(size_bytes, 'big')
             payload_bytes = output_file.read(size)
-            num_bytes_read += 2 + len(payload_bytes)
-            reassemble_file.write(decompress(payload_bytes, num_bits_for_bytes_per_window))
-            size_bytes = output_file.read(2)
+            num_bytes_read += 2 + len(payload_bytes)  # TODO remove hard-coded stuff
+            decompressed_bytes = decompress(payload_bytes, num_bits_for_bytes_per_window)
+            digest_out.update(decompressed_bytes)
+            reassemble_file.write(decompressed_bytes)
+            if num_bytes_read == file_size - 16:
+                published_digest_bytes = output_file.read(16)
+                num_bytes_read += 16
+            size_bytes = output_file.read(2)  # TODO remove hard-coded stuff
+        computed_digest_bytes = digest_out.digest()
 
+    assert computed_digest_bytes == published_digest_bytes
     decompression_toc = time.perf_counter()
-    print(f"Decompressing took {decompression_toc - decompression_tic:0.4f} seconds")
+    print(f'Decompressing took {decompression_toc - decompression_tic:0.4f} seconds')
+    print(f'Reconstituted MD5: {digest_out.hexdigest()}')
 
-    print(f"Num bytes read back in: {num_bytes_read}")
+    print(f"Num compressed bytes read back in: {num_bytes_read}")
