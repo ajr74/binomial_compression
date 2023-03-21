@@ -17,6 +17,25 @@ def get_index_set(bitset: bitarray) -> list:
     return index_vals
 
 
+def compression_index_to_bitarray(index: int, k_val: int, num_bits: int) -> bitarray:
+    target = index
+    start = num_bits - 1
+    result = bitarray(num_bits)
+    result.setall(0)
+    for i in range(k_val, 0, -1):
+        for j in range(start, -1, -1):
+            b = 0
+            if j >= i:
+                b = C[j][i]  # TODO util method: binm(j, i)
+            if b <= target:
+                result[j] = 1
+                start = j  # EXPERIMENTAL, but seemingly okay :)
+                target -= b
+                break
+        start -= 1
+    return result
+
+
 def num_bits_required_to_represent(value: int) -> int:
     assert value >= 0
     if value == 0 or value == 1:
@@ -35,25 +54,68 @@ def bitarray_to_int(bitset: bitarray) -> int:
     return util.ba2int(bitset)
 
 
-def decompress(input_bytes: bytes): #  -> bytes:
-    magic_num = 11 # TODO replace!!
+def decompress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
+
     tmp = bitarray()
     tmp.frombytes(input_bytes)
-    existence_bitarray = tmp[:256]
-    num_bits_for_each_k_val = bitarray_to_int(tmp[256:256+11])
 
-    iterations = existence_bitarray.count()
-    my_count = 0
+    start = 0
+    finish = max_num_bits_for_window_size
+    num_window_bytes = bitarray_to_int(tmp[start:finish])
+    num_bits_for_max_k = num_bits_required_to_represent(num_window_bytes)
+
+    start = finish
+    finish += 256
+    existence_bitarray = tmp[start:finish]
+
+    start = finish
+    finish += num_bits_for_max_k
+    num_bits_for_each_k_val = bitarray_to_int(tmp[start:finish])
+
+    byte_val = 0
+    byte_bitsets = []
+    k_elapsed = 0
+
     for bit in existence_bitarray:
-        my_count += bit
-    assert iterations == my_count
-    return None
+        if bit:
+            # read k
+            start = finish
+            finish += num_bits_for_each_k_val
+            _k = bitarray_to_int(tmp[start:finish])
+            max_payload_bits = num_bits_required_to_represent(C[num_window_bytes - k_elapsed][_k])
+
+            # read compression index
+            start = finish
+            finish += max_payload_bits
+            compression_index = bitarray_to_int(tmp[start:finish])
+            res = compression_index_to_bitarray(compression_index, _k, num_window_bytes - k_elapsed)
+            byte_bitsets.append((byte_val, res))
+            k_elapsed += _k
+
+        byte_val += 1
+
+    occupied_positions = bitarray(num_window_bytes)
+    occupied_positions.setall(0)
+    rehydrated_bytes = [0] * num_window_bytes
+    for byte_val, bitset in byte_bitsets:
+        inner_i = 0
+        for outer_i in range(0, num_window_bytes):
+            if occupied_positions[outer_i]:
+                continue
+            if bitset[inner_i]:
+                rehydrated_bytes[outer_i] = byte_val
+                occupied_positions[outer_i] = 1
+            inner_i += 1
+
+    return bytes(rehydrated_bytes)
 
 
-def compress(input_bytes: bytes, reverse=False) -> bytes:
+def compress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
     num_bytes = len(input_bytes)
     num_bits_for_num_bytes = num_bits_required_to_represent(num_bytes)
+
     result = bitarray()
+    result += int_to_bitarray(num_bytes, max_num_bits_for_window_size)
 
     byte_positions = []
     for i in range(0, 256):
@@ -86,9 +148,6 @@ def compress(input_bytes: bytes, reverse=False) -> bytes:
                 bisect.insort(to_remove, i)  # Add 'to_add' to 'to_remove', keeping 'to_remove' sorted.
             byte_bitsets.append((byte_val, bitset))
 
-    # Compute compression index values and update buffer.
-    total_percentage = 0
-
     num_bits_for_k = num_bits_required_to_represent(max(byte_counts))
     num_bits_for_k_bitarray = int_to_bitarray(num_bits_for_k, num_bits_for_num_bytes)
     result += num_bits_for_k_bitarray
@@ -104,44 +163,22 @@ def compress(input_bytes: bytes, reverse=False) -> bytes:
                 compression_index += C[position][j]
             j += 1
 
-        num_index_bits = num_bits_required_to_represent(compression_index)
         _k = len(pos_list)
-
-        percentage = (100.0 * _k) / num_bytes
-        total_percentage += percentage
         max_payload_bits = num_bits_required_to_represent(C[num_bytes - k_elapsed][_k])
-        assert max_payload_bits >= num_index_bits
-        appendable_data = int_to_bitarray(_k, num_bits_for_k) + int_to_bitarray(compression_index, max_payload_bits)
+        appendable_data = int_to_bitarray(_k, num_bits_for_k) + int_to_bitarray(compression_index, max_payload_bits)  # TODO - do we need to write the last payload? It's seemingly always 0.
         num_compressed_bits += len(appendable_data)
         result += appendable_data
         k_elapsed += _k
 
-    # try reversing
-    if reverse:
-        occupied_positions = bitarray(num_bytes)
-        occupied_positions.setall(0)
-        rehydrated_bytes = [0] * num_bytes
-        for byte_val, bitset in byte_bitsets:
-            inner_i = 0
-            for outer_i in range(0, num_bytes):
-                if occupied_positions[outer_i]:
-                    continue
-                if bitset[inner_i]:
-                    rehydrated_bytes[outer_i] = byte_val
-                    occupied_positions[outer_i] = 1
-                inner_i += 1
-        assert rehydrated_bytes == input_bytes
-        
-    assert total_percentage > 99.8
-    assert k_elapsed == num_bytes
     return result.tobytes()
 
 
 if __name__ == '__main__':
 
     # TODO get params from command-line args.
-    bytes_per_window = 1024 * 1
-    input_path = 'data/treasure_island.txt'
+    bytes_per_window = 1024 * 2
+    num_bits_for_bytes_per_window = num_bits_required_to_represent(bytes_per_window)
+    input_path = 'data/result1.bin'
     output_path = 'data/result.bin'
     reassemble_path = 'data/reassemble.bin'
 
@@ -167,7 +204,7 @@ if __name__ == '__main__':
         in_buffer_bytes = input_file.read(bytes_per_window)
         while in_buffer_bytes:
             total_bytes_read += len(in_buffer_bytes)
-            compressed_bytes = compress(in_buffer_bytes)
+            compressed_bytes = compress(in_buffer_bytes, num_bits_for_bytes_per_window)
             num_compressed_bytes = len(compressed_bytes)
             total_compressed_bytes += num_bytes_for_writing_num_window_bytes + num_compressed_bytes
             num_compressed_bytes_as_bytes = num_compressed_bytes.to_bytes(num_bytes_for_writing_num_window_bytes, 'big')
@@ -186,18 +223,17 @@ if __name__ == '__main__':
     # Try reading back
 
     num_bytes_read = 0
+    decompression_tic = time.perf_counter()
     with open(output_path, 'rb') as output_file, open(reassemble_path, 'wb') as reassemble_file:
         size_bytes = output_file.read(2)
         while size_bytes:
             size = int.from_bytes(size_bytes, 'big')
             payload_bytes = output_file.read(size)
             num_bytes_read += 2 + len(payload_bytes)
-            decompress(payload_bytes)
-            #print(f'Payload size declared: {size}. Actual: {len(payload_bytes)}')
+            reassemble_file.write(decompress(payload_bytes, num_bits_for_bytes_per_window))
             size_bytes = output_file.read(2)
 
+    decompression_toc = time.perf_counter()
+    print(f"Decompressing took {decompression_toc - decompression_tic:0.4f} seconds")
+
     print(f"Num bytes read back in: {num_bytes_read}")
-
-
-
-    
