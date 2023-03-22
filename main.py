@@ -39,6 +39,7 @@ def compression_index_to_bitarray(index: int, k_val: int, num_bits: int) -> bita
 def num_bits_required_to_represent(value: int) -> int:
     return 1 if value == 0 or value == 1 else math.floor(math.log2(value)) + 1
 
+
 def decompress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
 
     input_bits = bitarray()
@@ -61,21 +62,33 @@ def decompress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
     byte_bitsets = []
     k_elapsed = 0
 
+    existence_bitarray_count = existence_bitarray.count()
+    counter = 1
     for bit in existence_bitarray:
         if bit:
-            # read k
-            start = finish
-            finish += num_bits_for_each_k_val
-            _k = ba_util.ba2int(input_bits[start:finish])
-            max_payload_bits = num_bits_required_to_represent(C[num_window_bytes - k_elapsed][_k])
-            # read compression index
-            start = finish
-            finish += max_payload_bits
-            compression_index = ba_util.ba2int(input_bits[start:finish])
-            res = compression_index_to_bitarray(compression_index, _k, num_window_bytes - k_elapsed)
-            byte_bitsets.append((byte_val, res))
-            k_elapsed += _k
+            if counter < existence_bitarray_count:
+                # read k
+                start = finish
+                finish += num_bits_for_each_k_val
+                _k = ba_util.ba2int(input_bits[start:finish])
+                max_payload_bits = num_bits_required_to_represent(C[num_window_bytes - k_elapsed][_k])
+                # read compression index
+                start = finish
+                finish += max_payload_bits
+                compression_index = ba_util.ba2int(input_bits[start:finish])
+                res = compression_index_to_bitarray(compression_index, _k, num_window_bytes - k_elapsed)
+                byte_bitsets.append((byte_val, res))
+                k_elapsed += _k
+            else:
+                # final part can be inferred
+                _k_last = num_window_bytes - k_elapsed
+                res = bitarray(_k_last)
+                res.setall(1)
+                byte_bitsets.append((byte_val, res))
+                k_elapsed += _k_last
+            counter += 1
         byte_val += 1
+    assert k_elapsed == num_window_bytes
 
     occupied_positions = bitarray(num_window_bytes)
     occupied_positions.setall(0)
@@ -114,7 +127,6 @@ def compress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
     for c in byte_counts:
         existence_bitarray.append(c > 0)
     result += existence_bitarray
-    num_compressed_bits = 256
 
     byte_bitsets = []
     to_remove = []
@@ -134,10 +146,9 @@ def compress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
     num_bits_for_k = num_bits_required_to_represent(max(byte_counts))
     num_bits_for_k_bitarray = ba_util.int2ba(num_bits_for_k, num_bits_for_num_bytes)
     result += num_bits_for_k_bitarray
-    num_compressed_bits += num_bits_for_num_bytes
 
     k_elapsed = 0
-    for _, bitset in byte_bitsets:
+    for _, bitset in byte_bitsets[:-1]:  # last element can be handled by inference
         compression_index = 0
         pos_list = get_index_set(bitset)
         j = 1
@@ -148,8 +159,7 @@ def compress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
 
         _k = len(pos_list)
         max_payload_bits = num_bits_required_to_represent(C[num_bytes - k_elapsed][_k])
-        appendable_data = ba_util.int2ba(_k, num_bits_for_k) + ba_util.int2ba(compression_index, max_payload_bits)  # TODO - do we need to write the last payload? It's seemingly always 0.
-        num_compressed_bits += len(appendable_data)
+        appendable_data = ba_util.int2ba(_k, num_bits_for_k) + ba_util.int2ba(compression_index, max_payload_bits)
         result += appendable_data
         k_elapsed += _k
 
@@ -159,9 +169,9 @@ def compress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
 if __name__ == '__main__':
 
     # TODO get params from command-line args.
-    bytes_per_window = 4096 + 2048
+    bytes_per_window = 1024
     num_bits_for_bytes_per_window = num_bits_required_to_represent(bytes_per_window)
-    input_path = 'data/g_sample_1920×1280.pgm'
+    input_path = 'data/bible.txt'
     output_path = 'data/result.bin'
     reassemble_path = 'data/reassemble.bin'
 
