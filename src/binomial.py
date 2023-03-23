@@ -14,6 +14,13 @@ class Binomial:
             self.cache.append(row)
 
     def get(self, n: int, k: int) -> int:
+        """
+        Fetches the (N, k) binomial coefficient from a precomputed cache.
+
+        :param n: the n parameter of interest.
+        :param k: the k parameter of interest.
+        :return: the binomial coefficient (N, k).
+        """
         if k == 0 or n == k:
             return 1
         nm2 = n-2
