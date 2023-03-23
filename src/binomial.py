@@ -2,7 +2,7 @@ class Binomial:
 
     def __init__(self, max_n):
         # Populate lookup table with Pascal's Rule. (We only need to store less than half thanks to symmetry.)
-        self.c = []
+        self.cache = []
         self.half_n_vals = []
         for n in range(2, max_n):
             half_n = n // 2
@@ -11,11 +11,11 @@ class Binomial:
             for k in range(1, half_n + 1):
                 nm1 = n-1
                 row.append(self.get(nm1, k-1) + self.get(nm1, k))
-            self.c.append(row)
+            self.cache.append(row)
 
     def get(self, n: int, k: int) -> int:
         if k == 0 or n == k:
             return 1
         nm2 = n-2
-        return self.c[nm2][n-k-1 if k > self.half_n_vals[nm2] else k-1]
+        return self.cache[nm2][n - k - 1 if k > self.half_n_vals[nm2] else k - 1]
 

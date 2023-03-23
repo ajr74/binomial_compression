@@ -1,5 +1,5 @@
-from bitarray import bitarray
 import numpy as np
+from bitarray import bitarray
 
 bytesFromFile = np.fromfile("data/E.coli", dtype="uint8")  # Canterbury corpus
 total_bytes_read = 0
