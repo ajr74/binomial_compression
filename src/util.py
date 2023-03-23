@@ -8,6 +8,7 @@ def num_bits_required_to_represent(value: int) -> int:
     """
     Computes the number of bits required to represent the supplied integer value. Note that we swerve the temptation of
     math.ceil(math.log2(value)) since it doesn't work for powers of 2.
+    See: https://www.exploringbinary.com/number-of-bits-in-a-decimal-integer/
 
     :param value: the integer value of interest.
     :return: the number of bits required to represent the supplied integer value.
