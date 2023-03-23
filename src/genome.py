@@ -19,11 +19,10 @@ for b in bytesFromFile:
     elif b == 116:
         bitset.append(1)
         bitset.append(1)
-        bitset.append
     total_bytes_read += 1
 
 my_bytes = bitset.tobytes()
 
-with open("my_file.bin", "wb") as binary_file:
+with open("data/E.coli.sensible", "wb") as binary_file:
     # Write bytes to file
     binary_file.write(my_bytes)

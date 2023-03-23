@@ -23,7 +23,7 @@ class StatsCalculator:
             if c > 0:
                 p = c * n_inv
                 ent += (p * math.log2(p))
-        return -ent
+        return math.fabs(ent)
 
     def compute_md5_bytes(self) -> bytes:
         return self.md5_digest.digest()
