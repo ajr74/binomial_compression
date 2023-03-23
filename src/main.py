@@ -83,22 +83,22 @@ def decompress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
                 # read k
                 start = finish
                 finish += num_bits_for_each_k_val
-                _k = ba_util.ba2int(input_bits[start:finish])
-                max_payload_bits = num_bits_required_to_represent(C.get(num_window_bytes - k_elapsed, _k))
+                k = ba_util.ba2int(input_bits[start:finish])
+                max_payload_bits = num_bits_required_to_represent(C.get(num_window_bytes - k_elapsed, k))
                 # read compression index
                 start = finish
                 finish += max_payload_bits
                 compression_index = ba_util.ba2int(input_bits[start:finish])
-                res = compression_index_to_bitarray(compression_index, _k, num_window_bytes - k_elapsed)
+                res = compression_index_to_bitarray(compression_index, k, num_window_bytes - k_elapsed)
                 byte_bitsets.append((byte_val, res))
-                k_elapsed += _k
+                k_elapsed += k
             else:
                 # final part can be inferred
-                _k_last = num_window_bytes - k_elapsed
-                res = bitarray(_k_last)
+                k_last = num_window_bytes - k_elapsed
+                res = bitarray(k_last)
                 res.setall(1)
                 byte_bitsets.append((byte_val, res))
-                k_elapsed += _k_last
+                k_elapsed += k_last
             counter += 1
         byte_val += 1
     assert k_elapsed == num_window_bytes
@@ -170,11 +170,11 @@ def compress(input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
                 compression_index += C.get(position, j)
             j += 1
 
-        _k = len(pos_list)
-        max_payload_bits = num_bits_required_to_represent(C.get(num_bytes - k_elapsed, _k))
-        appendable_data = ba_util.int2ba(_k, num_bits_for_k) + ba_util.int2ba(compression_index, max_payload_bits)
+        k = len(pos_list)
+        max_payload_bits = num_bits_required_to_represent(C.get(num_bytes - k_elapsed, k))
+        appendable_data = ba_util.int2ba(k, num_bits_for_k) + ba_util.int2ba(compression_index, max_payload_bits)
         result += appendable_data
-        k_elapsed += _k
+        k_elapsed += k
 
     return result.tobytes()
 
