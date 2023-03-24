@@ -5,17 +5,18 @@ import util
 from binomial import Binomial
 
 
-class Compressor:
+class WindowCompressor:
 
-    def __init__(self, binomial_coefficient_cache: Binomial):
+    def __init__(self, binomial_coefficient_cache: Binomial, num_bytes_for_uncompressed_window: int):
         self.bc_cache = binomial_coefficient_cache
+        self.max_num_bits_for_window_size = util.num_bits_required_to_represent(num_bytes_for_uncompressed_window)
 
-    def compress(self, input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
+    def process(self, input_bytes: bytes) -> bytes:
         num_bytes = len(input_bytes)
         num_bits_for_num_bytes = util.num_bits_required_to_represent(num_bytes)
 
         result = bitarray()
-        result += ba_util.int2ba(num_bytes, max_num_bits_for_window_size)
+        result += ba_util.int2ba(num_bytes, self.max_num_bits_for_window_size)
 
         byte_positions = []
         for _ in range(0, 256):

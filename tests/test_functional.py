@@ -2,8 +2,8 @@ import random
 
 import util
 from binomial import Binomial
-from compressor import Compressor
-from decompressor import Decompressor
+from window_compressor import WindowCompressor
+from window_decompressor import WindowDecompressor
 
 
 def random_sparse_bytes(n: int) -> bytearray:
@@ -18,10 +18,9 @@ def test_roundtrips():
     cache = Binomial(1001)
     for i in range(0, 10):
         n = random.randint(500, 1000)
-        m = util.num_bits_required_to_represent(n)
         random_bytes = random_sparse_bytes(n)
-        compressor = Compressor(binomial_coefficient_cache=cache)
-        compressed_bytes = compressor.compress(random_bytes, m)
-        decompressor = Decompressor(binomial_coefficient_cache=cache)
-        decompressed_bytes = decompressor.decompress(compressed_bytes, m)
+        compressor = WindowCompressor(cache, n)
+        compressed_bytes = compressor.process(random_bytes)
+        decompressor = WindowDecompressor(cache, n)
+        decompressed_bytes = decompressor.process(compressed_bytes)
         assert decompressed_bytes == random_bytes

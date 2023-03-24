@@ -5,10 +5,11 @@ import util
 from binomial import Binomial
 
 
-class Decompressor:
+class WindowDecompressor:
 
-    def __init__(self, binomial_coefficient_cache: Binomial):
+    def __init__(self, binomial_coefficient_cache: Binomial, num_bytes_for_uncompressed_window: int):
         self.bc_cache = binomial_coefficient_cache
+        self.max_num_bits_for_window_size = util.num_bits_required_to_represent(num_bytes_for_uncompressed_window)
 
     def compression_index_to_bitarray(self, index: int, k_val: int, num_bits: int) -> bitarray:
         result = bitarray(num_bits)
@@ -31,13 +32,13 @@ class Decompressor:
             start -= 1
         return result
 
-    def decompress(self, input_bytes: bytes, max_num_bits_for_window_size: int) -> bytes:
+    def process(self, input_bytes: bytes) -> bytes:
 
         input_bits = bitarray()
         input_bits.frombytes(input_bytes)
 
         start = 0
-        finish = max_num_bits_for_window_size
+        finish = self.max_num_bits_for_window_size
         num_window_bytes = ba_util.ba2int(input_bits[start:finish])
         num_bits_for_max_k = util.num_bits_required_to_represent(num_window_bytes)
 

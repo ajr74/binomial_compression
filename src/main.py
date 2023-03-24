@@ -4,8 +4,8 @@ import time
 
 import util
 from binomial import Binomial
-from compressor import Compressor
-from decompressor import Decompressor
+from window_compressor import WindowCompressor
+from window_decompressor import WindowDecompressor
 from stats_calculator import StatsCalculator
 
 MAGIC_BYTES = b'ajr74z'
@@ -37,20 +37,19 @@ if __name__ == '__main__':
             magic = util.read_bytes(d_input_file, d_in_stats, len(MAGIC_BYTES))
             if magic == MAGIC_BYTES:
                 bytes_per_window = util.read_val(d_input_file, d_in_stats)
-                num_bits_for_bytes_per_window = util.num_bits_required_to_represent(bytes_per_window)
                 cache_tic = time.perf_counter()
                 cache = Binomial(bytes_per_window + 1)
                 cache_toc = time.perf_counter()
                 if args.verbose:
                     print(f'Establishing a binomial coefficient cache took {cache_toc - cache_tic:0.4f} seconds')
-                decompressor = Decompressor(binomial_coefficient_cache=cache)
+                decompressor = WindowDecompressor(cache, bytes_per_window)
                 decompression_tic = time.perf_counter()
                 d_out_stats = StatsCalculator()
                 with open(d_output_path, 'wb') as d_output_file:
                     size = util.read_val(d_input_file, d_in_stats)
                     while size:
                         payload_bytes = util.read_bytes(d_input_file, d_in_stats, size)
-                        decompressed_bytes = decompressor.decompress(payload_bytes, num_bits_for_bytes_per_window)
+                        decompressed_bytes = decompressor.process(payload_bytes)
                         util.write_bytes(d_output_file, d_out_stats, decompressed_bytes)
                         if d_in_stats.num_bytes == file_size - MD5_DIGEST_SIZE:
                             published_digest_bytes = util.read_bytes(d_input_file, d_in_stats, MD5_DIGEST_SIZE)
@@ -84,7 +83,7 @@ if __name__ == '__main__':
         c_out_stats = StatsCalculator()
         c_input_path = args.file
         c_output_path = c_input_path + COMPRESSED_EXT
-        compressor = Compressor(binomial_coefficient_cache=cache)
+        compressor = WindowCompressor(cache, bytes_per_window)
 
         compression_tic = time.perf_counter()
         with open(c_input_path, 'rb') as c_input_file, open(c_output_path, 'wb') as c_output_file:
@@ -92,7 +91,7 @@ if __name__ == '__main__':
             util.write_val(c_output_file, c_out_stats, bytes_per_window)
             in_buffer_bytes = util.read_bytes(c_input_file, c_in_stats, bytes_per_window)
             while in_buffer_bytes:
-                compressed_bytes = compressor.compress(in_buffer_bytes, num_bits_for_bytes_per_window)
+                compressed_bytes = compressor.process(in_buffer_bytes)
                 util.write_val(c_output_file, c_out_stats, len(compressed_bytes))
                 util.write_bytes(c_output_file, c_out_stats, compressed_bytes)
                 in_buffer_bytes = util.read_bytes(c_input_file, c_in_stats, bytes_per_window)
