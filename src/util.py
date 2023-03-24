@@ -3,6 +3,62 @@ import math
 from bitarray import bitarray
 from bitarray import util as ba_util
 
+from stats_calculator import StatsCalculator
+
+NUM_BYTES_FOR_PERSISTED_PARAMETERS = 2
+MAX_PERSISTABLE_PARAMETER_VAL = (1 << (NUM_BYTES_FOR_PERSISTED_PARAMETERS * 8)) - 1
+
+
+def write_val(_outfile, _calc: StatsCalculator, _val: int):
+    """
+    Write the supplied non-negative integer value to the specified output file.
+
+    :param _outfile: the output file to write to.
+    :param _calc: the stats calculator to update.
+    :param _val: the non-negative integer value to write.
+    """
+    assert _val >= 0
+    assert _val <= MAX_PERSISTABLE_PARAMETER_VAL
+    write_bytes(_outfile, _calc, _val.to_bytes(NUM_BYTES_FOR_PERSISTED_PARAMETERS, 'big'))
+
+
+def write_bytes(_outfile, _calc: StatsCalculator, _bytes: bytes):
+    """
+    Write the supplied bytes to the specified output file.
+
+    :param _outfile: the output file to write to.
+    :param _calc: the stats calculator to update.
+    :param _bytes: the bytes to write.
+    """
+    _outfile.write(_bytes)
+    _calc.update(_bytes)
+
+
+def read_val(_infile, _calc: StatsCalculator) -> int:
+    """
+    Read an integer value from the specified input file.
+
+    :param _infile: the input file to read from.
+    :param _calc: the stats calculator to update.
+    :return: the integer value read from the input file.
+    """
+    _result = read_bytes(_infile, _calc, NUM_BYTES_FOR_PERSISTED_PARAMETERS)
+    return int.from_bytes(_result, 'big')
+
+
+def read_bytes(_infile, _calc: StatsCalculator, _num_bytes_to_read: int) -> bytes:
+    """
+    Read bytes from the specified input file.
+
+    :param _infile: the input file to read from.
+    :param _calc: the stats calculator to update.
+    :param _num_bytes_to_read: the number of bytes to read.
+    :return: the bytes read from the input file.
+    """
+    _result = _infile.read(_num_bytes_to_read)
+    _calc.update(_result)
+    return _result
+
 
 def num_bits_required_to_represent(value: int) -> int:
     """

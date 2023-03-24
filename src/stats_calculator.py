@@ -7,6 +7,7 @@ class StatsCalculator:
     def __init__(self):
         self.counts = [0] * 256
         self.md5_digest = hashlib.md5()
+        self.num_bytes = 0
 
     def update(self, _bytes: bytes):
         """
@@ -17,6 +18,7 @@ class StatsCalculator:
         for b in _bytes:
             self.counts[b] += 1
         self.md5_digest.update(_bytes)
+        self.num_bytes += len(_bytes)
 
     def compute_shannon_entropy(self) -> float:
         """

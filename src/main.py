@@ -1,3 +1,4 @@
+import argparse
 import os
 import time
 
@@ -7,91 +8,104 @@ from compressor import Compressor
 from decompressor import Decompressor
 from stats_calculator import StatsCalculator
 
-COMPRESS = True
-DECOMPRESS = True
-
+MAGIC_BYTES = b'ajr74z'
+COMPRESSED_EXT = '.ajz'
+DEFAULT_WINDOW_SIZE = 1024
+MAX_WINDOW_SIZE = 4096
+MD5_DIGEST_SIZE = 16
 
 if __name__ == '__main__':
 
-    # TODO get params from command-line args.
-    bytes_per_window = 1024
-    num_bits_for_bytes_per_window = util.num_bits_required_to_represent(bytes_per_window)
-    input_path = 'data/bible.txt'
-    output_path = 'data/result.bin'
-    reassemble_path = 'data/reassemble.bin'
+    parser = argparse.ArgumentParser(description='Compress/decompress a file')
+    parser.add_argument('file', help='the file to process')
+    parser.add_argument('-d', '--decompress', action='store_true', help='run in decompression mode')
+    parser.add_argument('-k', '--keep', action='store_true', help='retain files')
+    parser.add_argument('-s', '--size', help=f'number of bytes per processing window (max {MAX_WINDOW_SIZE})',
+                        default=DEFAULT_WINDOW_SIZE)
+    parser.add_argument('-v', '--verbose', action='store_true', help='run verbosely')
+    args = parser.parse_args()
 
-    cache_builder_tic = time.perf_counter()
-    cache = Binomial(bytes_per_window + 1)
-    cache_builder_toc = time.perf_counter()
-    print(f"Setting up binomial coefficient cache took {cache_builder_toc - cache_builder_tic:0.4f} seconds")
+    if not os.path.exists(args.file) or not os.path.isfile(args.file):
+        raise FileNotFoundError(f'{args.file} does not exist or is not a regular file')
 
-    if COMPRESS:
-        compression_tic = time.perf_counter()
-        total_bytes_read = 0
-        total_compressed_bytes = 0
-        num_bytes_for_writing_num_window_bytes = 2
-        in_stats = StatsCalculator()
-        out_stats = StatsCalculator()
+    if args.decompress:
+        d_input_path = args.file
+        d_output_path = d_input_path.removesuffix(COMPRESSED_EXT)
+        file_size = os.stat(d_input_path).st_size
+        with open(d_input_path, 'rb') as d_input_file:
+            d_in_stats = StatsCalculator()
+            magic = util.read_bytes(d_input_file, d_in_stats, len(MAGIC_BYTES))
+            if magic == MAGIC_BYTES:
+                bytes_per_window = util.read_val(d_input_file, d_in_stats)
+                num_bits_for_bytes_per_window = util.num_bits_required_to_represent(bytes_per_window)
+                cache_tic = time.perf_counter()
+                cache = Binomial(bytes_per_window + 1)
+                cache_toc = time.perf_counter()
+                if args.verbose:
+                    print(f'Establishing a binomial coefficient cache took {cache_toc - cache_tic:0.4f} seconds')
+                decompressor = Decompressor(binomial_coefficient_cache=cache)
+                decompression_tic = time.perf_counter()
+                d_out_stats = StatsCalculator()
+                with open(d_output_path, 'wb') as d_output_file:
+                    size = util.read_val(d_input_file, d_in_stats)
+                    while size:
+                        payload_bytes = util.read_bytes(d_input_file, d_in_stats, size)
+                        decompressed_bytes = decompressor.decompress(payload_bytes, num_bits_for_bytes_per_window)
+                        util.write_bytes(d_output_file, d_out_stats, decompressed_bytes)
+                        if d_in_stats.num_bytes == file_size - MD5_DIGEST_SIZE:
+                            published_digest_bytes = util.read_bytes(d_input_file, d_in_stats, MD5_DIGEST_SIZE)
+                        size = util.read_val(d_input_file, d_in_stats)
+                    computed_digest_bytes = d_out_stats.compute_md5_bytes()
+                assert computed_digest_bytes == published_digest_bytes
+                decompression_toc = time.perf_counter()
 
+                if args.verbose:
+                    print(f'Decompression time: {decompression_toc - decompression_tic:0.4f} seconds')
+                    print(f'Input:: bytes: {d_in_stats.num_bytes}; MD5: {d_in_stats.compute_md5_hex()}; ' 
+                          f'Shannon entropy: {d_in_stats.compute_shannon_entropy():0.6f}')
+                    print(f'Output:: bytes: {d_out_stats.num_bytes}; MD5: {d_out_stats.compute_md5_hex()}; ' 
+                          f'Shannon entropy: {d_out_stats.compute_shannon_entropy():0.6f}')
+                if not args.keep:
+                    os.remove(d_input_path)
+
+            else:
+                print(f'Incorrect compression format!')
+
+    else:
+        bytes_per_window = args.size
+        num_bits_for_bytes_per_window = util.num_bits_required_to_represent(bytes_per_window)
+        cache_tic = time.perf_counter()
+        cache = Binomial(bytes_per_window + 1)
+        cache_toc = time.perf_counter()
+        if args.verbose:
+            print(f"Establishing a binomial coefficient cache took {cache_toc - cache_tic:0.4f} seconds")
+
+        c_in_stats = StatsCalculator()
+        c_out_stats = StatsCalculator()
+        c_input_path = args.file
+        c_output_path = c_input_path + COMPRESSED_EXT
         compressor = Compressor(binomial_coefficient_cache=cache)
-        with open(input_path, 'rb') as input_file, open(output_path, 'wb') as output_file:
-            in_buffer_bytes = input_file.read(bytes_per_window)
-            in_stats.update(in_buffer_bytes)
+
+        compression_tic = time.perf_counter()
+        with open(c_input_path, 'rb') as c_input_file, open(c_output_path, 'wb') as c_output_file:
+            util.write_bytes(c_output_file, c_out_stats, MAGIC_BYTES)
+            util.write_val(c_output_file, c_out_stats, bytes_per_window)
+            in_buffer_bytes = util.read_bytes(c_input_file, c_in_stats, bytes_per_window)
             while in_buffer_bytes:
-                total_bytes_read += len(in_buffer_bytes)
                 compressed_bytes = compressor.compress(in_buffer_bytes, num_bits_for_bytes_per_window)
-                num_compressed_bytes = len(compressed_bytes)
-                total_compressed_bytes += num_bytes_for_writing_num_window_bytes + num_compressed_bytes
-                num_compressed_bytes_as_bytes = num_compressed_bytes.to_bytes(num_bytes_for_writing_num_window_bytes, 'big')
-                output_file.write(num_compressed_bytes_as_bytes)
-                out_stats.update(num_compressed_bytes_as_bytes)
-                output_file.write(compressed_bytes)
-                out_stats.update(compressed_bytes)
-                in_buffer_bytes = input_file.read(bytes_per_window)
-                in_stats.update(in_buffer_bytes)
-            original_md5_bytes = in_stats.compute_md5_bytes()
-            output_file.write(original_md5_bytes)  # append the original 16-byte MD5 to the very end of the file.
-            out_stats.update(original_md5_bytes)
-            total_compressed_bytes += 16
-
-        print(f'Input MD5: {in_stats.compute_md5_hex()}')
-        print(f'Input Shannon entropy: {in_stats.compute_shannon_entropy():0.6f}')
-        print(f'Output MD5: {out_stats.compute_md5_hex()}')
-        print(f'Output Shannon entropy: {out_stats.compute_shannon_entropy():0.6f}')
-
+                util.write_val(c_output_file, c_out_stats, len(compressed_bytes))
+                util.write_bytes(c_output_file, c_out_stats, compressed_bytes)
+                in_buffer_bytes = util.read_bytes(c_input_file, c_in_stats, bytes_per_window)
+            util.write_bytes(c_output_file, c_out_stats, c_in_stats.compute_md5_bytes())
         compression_toc = time.perf_counter()
-        print(f"Compressing took {compression_toc - compression_tic:0.4f} seconds")
 
-        print(f'total bytes (raw): {total_bytes_read}')
-        print(f'total bytes (compressed): {total_compressed_bytes}')
-        print(f'space saving: {100 * (1 - total_compressed_bytes / total_bytes_read):0.2f}%')
+        if args.verbose:
+            print(f'Compression time: {compression_toc - compression_tic:0.4f} seconds')
+            print(f'Input:: bytes: {c_in_stats.num_bytes}; MD5: {c_in_stats.compute_md5_hex()}; ' 
+                  f'Shannon entropy: {c_in_stats.compute_shannon_entropy():0.6f}')
+            print(f'Output:: bytes: {c_out_stats.num_bytes}; MD5: {c_out_stats.compute_md5_hex()}; ' 
+                  f'Shannon entropy: {c_out_stats.compute_shannon_entropy():0.6f}')
+            print(f'Space saving: {100 * (1 - c_out_stats.num_bytes / c_in_stats.num_bytes):0.2f}%')
 
-    # Try reading back
-
-    if DECOMPRESS:
-        num_bytes_read = 0
-        decompression_tic = time.perf_counter()
-        file_size = os.stat(output_path).st_size
-        rehydrate_stats = StatsCalculator()
-        decompressor = Decompressor(binomial_coefficient_cache=cache)
-        with open(output_path, 'rb') as output_file, open(reassemble_path, 'wb') as reassemble_file:
-            size_bytes = output_file.read(2)  # TODO remove hard-coded stuff
-            while size_bytes:
-                size = int.from_bytes(size_bytes, 'big')
-                payload_bytes = output_file.read(size)
-                num_bytes_read += 2 + len(payload_bytes)  # TODO remove hard-coded stuff
-                decompressed_bytes = decompressor.decompress(payload_bytes, num_bits_for_bytes_per_window)
-                rehydrate_stats.update(decompressed_bytes)
-                reassemble_file.write(decompressed_bytes)
-                if num_bytes_read == file_size - 16:
-                    published_digest_bytes = output_file.read(16)
-                    num_bytes_read += 16
-                size_bytes = output_file.read(2)  # TODO remove hard-coded stuff
-            computed_digest_bytes = rehydrate_stats.compute_md5_bytes()
-
-        assert computed_digest_bytes == published_digest_bytes
-        decompression_toc = time.perf_counter()
-        print(f'Decompressing took {decompression_toc - decompression_tic:0.4f} seconds')
-        print(f'Reconstituted MD5: {rehydrate_stats.compute_md5_hex()}')
-
-        print(f"Num compressed bytes read back in: {num_bytes_read}")
+        if not args.keep:
+            os.remove(c_input_path)

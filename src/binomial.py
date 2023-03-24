@@ -25,4 +25,3 @@ class Binomial:
             return 1
         nm2 = n-2
         return self.cache[nm2][n - k - 1 if k > self.half_n_vals[nm2] else k - 1]
-
