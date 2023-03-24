@@ -1,6 +1,6 @@
-import util
-
 from bitarray import bitarray
+
+import util
 
 
 def test_num_bits_required_to_represent_0():
