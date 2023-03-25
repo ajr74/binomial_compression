@@ -19,8 +19,10 @@ class Binomial:
 
         :param n: the n parameter of interest.
         :param k: the k parameter of interest.
-        :return: the binomial coefficient (N, k).
+        :return: the binomial coefficient (N, k), or 0 if k > N.
         """
+        if k > n:
+            return 0
         if k == 0 or n == k:
             return 1
         nm2 = n-2

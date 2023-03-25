@@ -23,7 +23,7 @@ class WindowDecompressor:
         start = num_bits - 1
         for i in range(k_val, 0, -1):
             for j in range(start, -1, -1):
-                b = self.bc_cache.get(j, i) if j >= i else 0
+                b = self.bc_cache.get(j, i)
                 if b <= target:
                     result[j] = 1
                     start = j

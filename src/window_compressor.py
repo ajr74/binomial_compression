@@ -58,8 +58,7 @@ class WindowCompressor:
             pos_list = util.get_index_set(bitset)
             j = 1
             for position in pos_list:
-                if position >= j:
-                    compression_index += self.bc_cache.get(position, j)
+                compression_index += self.bc_cache.get(position, j)
                 j += 1
 
             k = len(pos_list)
