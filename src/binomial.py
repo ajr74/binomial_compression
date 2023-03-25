@@ -17,7 +17,7 @@ class Binomial:
         """
         Fetches the (N, k) binomial coefficient from a precomputed cache.
 
-        :param n: the n parameter of interest.
+        :param n: the N parameter of interest.
         :param k: the k parameter of interest.
         :return: the binomial coefficient (N, k), or 0 if k > N.
         """
