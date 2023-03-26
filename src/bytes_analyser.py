@@ -2,7 +2,7 @@ import hashlib
 import math
 
 
-class StatsCalculator:
+class BytesAnalyser:
 
     def __init__(self):
         self.counts = [0] * 256
@@ -11,7 +11,7 @@ class StatsCalculator:
 
     def update(self, _bytes: bytes):
         """
-        Updates the calculator with the bytes provided.
+        Updates the analyser with the bytes provided.
 
         :param _bytes: the bytes for the update.
         """

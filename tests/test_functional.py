@@ -1,6 +1,5 @@
 import random
 
-import util
 from binomial import Binomial
 from window_compressor import WindowCompressor
 from window_decompressor import WindowDecompressor
