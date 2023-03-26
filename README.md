@@ -1,8 +1,12 @@
 # Binomial compression
-We propose a method for compression based on a two-fold strategy: (i) decomposition of a window of arbitray bytes to a series of reduced bitsets; (ii) compression of bitsts using colexicographic ranking
+We propose a method for compression based on a two-fold strategy: (i) decomposition of a window of arbitray bytes to a series of reduced bitsets; (ii) compression of bitsts using colexicographic ranking.
+
+The algorithm is presently incapable of outperforming standard compression utilities like _gzip_ and _xz_. However, it works. We see itm therefore, as a proof of concept and a starting point for bigger things.
 
 ## Window decomposition
-_TODO_
+Consider, in a universe of size 3, a window of five elements, say $[y, y, x, z, z]$. We can project this window on to three bitsets (in ascending order): $[00100]\_{x}$, $[11000]\_{y}$, and $[00011]\_{z}$. Rather than use these bitsets of equal length as input to a bitset compressor, we can fist perform a reduction. A simple scheme involves removing bitset positions from previous bitsets: $[00100]\_{\bar{x}}$, $[1100]\_{\bar{y}}$, and $[11]\_{\bar{z}}$. Such a scheme is reversible.
+
+In practice, we deal with byte windows which have a universe size of 256, but the methodology is similar to the synthetic example above.
 
 ## Bitset ranking
 Consider a bitset $b$ containing $N$ bits and having a population count of $k$. Bitset $b$ is one of many possible bitsets associated with the tuple $(N,k)$, or $b\in{B_{N,k}}=\{b_0, b_1, ...\}$. The cardinality of $B_{N,k}$ is given by the usual binomial coefficient
