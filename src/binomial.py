@@ -1,4 +1,7 @@
 class Binomial:
+    """
+    A cache of pre-computed binomial coefficients.
+    """
 
     def __init__(self, max_n):
         # Populate lookup table with Pascal's Rule. (We only need to store less than half thanks to symmetry.)

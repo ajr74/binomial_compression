@@ -3,6 +3,9 @@ import math
 
 
 class BytesAnalyser:
+    """
+    A bytes analyser for computing an MD5 hash and Shannon entropy value.
+    """
 
     def __init__(self):
         self.counts = [0] * 256

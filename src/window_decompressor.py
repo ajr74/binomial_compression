@@ -6,12 +6,23 @@ from binomial import Binomial
 
 
 class WindowDecompressor:
+    """
+    A decompressor for a window of compressed bytes.
+    """
 
     def __init__(self, binomial_coefficient_cache: Binomial, num_bytes_for_uncompressed_window: int):
         self.bc_cache = binomial_coefficient_cache
         self.max_num_bits_for_window_size = util.num_bits_required_to_represent(num_bytes_for_uncompressed_window)
 
     def compression_index_to_bitarray(self, index: int, k_val: int, num_bits: int) -> bitarray:
+        """
+        Converts the supplied compression index to a decompressed bitarray.
+
+        :param index: the index value of interest.
+        :param k_val: the k parameter of interest.
+        :param num_bits: the number of bits for the resultant bitarray.
+        :return: the decompressed index as a bitarray.
+        """
         result = bitarray(num_bits)
         result.setall(0)
 
@@ -33,7 +44,12 @@ class WindowDecompressor:
         return result
 
     def process(self, input_bytes: bytes) -> bytes:
+        """
+        Decompresses the supplied bytes.
 
+        :param input_bytes: the bytes of interest.
+        :return: the decompressed bytes.
+        """
         input_bits = bitarray()
         input_bits.frombytes(input_bytes)
 

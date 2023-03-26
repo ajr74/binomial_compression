@@ -6,12 +6,21 @@ from binomial import Binomial
 
 
 class WindowCompressor:
+    """
+    A compressor for a window of arbitrary bytes.
+    """
 
     def __init__(self, binomial_coefficient_cache: Binomial, num_bytes_for_uncompressed_window: int):
         self.bc_cache = binomial_coefficient_cache
         self.max_num_bits_for_window_size = util.num_bits_required_to_represent(num_bytes_for_uncompressed_window)
 
     def process(self, input_bytes: bytes) -> bytes:
+        """
+        Compresses the supplied bytes.
+
+        :param input_bytes: the bytes of interest.
+        :return: the compressed bytes.
+        """
         num_bytes = len(input_bytes)
         num_bits_for_num_bytes = util.num_bits_required_to_represent(num_bytes)
 
