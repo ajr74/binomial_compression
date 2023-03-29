@@ -24,6 +24,8 @@ class Binomial:
         :param k: the k parameter of interest.
         :return: the binomial coefficient (N, k), or 0 if k > N.
         """
+        if k == 1:
+            return n
         if k > n:
             return 0
         if k == 0 or n == k:
