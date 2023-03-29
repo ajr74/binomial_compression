@@ -15,7 +15,7 @@ Bitset $b$ is one of many possible bitsets associated with the tuple $(N,k)$, or
 
 $$|B_{N,k}|=\binom{N}{k}=\frac{N!}{k!(N-k)!}.$$
 
-We seek a function to uniquely index each $b$ in $B_{N,k}$. Using co-lexicographic ordering, there is a ranking function to obtain the index value:
+We seek a function to uniquely index each $b$ in $B_{N,k}$. Using [colexicographic ordering](https://en.wikipedia.org/wiki/Lexicographic_order#Colexicographic_order), there is a ranking function to obtain the index value:
 
 $$r(b)=\sum^{k}_{i=1}\binom{p(b,i)}{i}$$
 
@@ -26,6 +26,8 @@ We can recover $b$ from $r(b)$ by successively applying an unranking function:
 $$p(b,i)=\max_j\binom{j}{i}, \text{s.t.}\binom{j}{i}\leqslant r(b)-\sum^{k}_{\ell=i+1}p(b,\ell)$$
 
 where $i=k,...,1$.
+
+Note: ranking/unranking heavily depend on binomial coefficients. Rather than compute these quantities on demand (a potentially expensive proposition), they can be efficiently pre-computed using [Pascal's Rule](https://en.wikipedia.org/wiki/Pascal%27s_rule).
 
 ## Compressed file spec
 The file format is fairly rudimentary. The beginning of the file contains magic bytes and the number of uncompressed bytes for each window. Then a succession of compressed windows. The end of the file contains the MD5 digest of the original.
