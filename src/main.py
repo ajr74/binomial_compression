@@ -23,7 +23,7 @@ if __name__ == '__main__':
     parser.add_argument('file', help='the file to process')
     parser.add_argument('-d', '--decompress', action='store_true', help='run in decompression mode')
     parser.add_argument('-k', '--keep', action='store_true', help='retain files')
-    parser.add_argument('-s', '--size', type=int, help=f'number of bytes per processing window (max {MAX_WINDOW_SIZE})',
+    parser.add_argument('-s', '--size', type=int, help=f'number of bytes per processing window (default {DEFAULT_WINDOW_SIZE}, max {MAX_WINDOW_SIZE})',
                         default=DEFAULT_WINDOW_SIZE)
     parser.add_argument('-v', '--verbose', action='store_true', help='run verbosely')
     args = parser.parse_args()
