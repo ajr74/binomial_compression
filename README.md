@@ -1,10 +1,10 @@
 # Binomial compression
 We propose a method for lossless compression based on a two-fold strategy: (i) decomposition of a window of arbitray bytes to a series of reduced bitsets; (ii) compression of bitsets using colexicographic ranking.
 
-The algorithm is presently incapable of outperforming standard compression utilities like _gzip_ and _xz_. However, it works. We see it therefore, as _only_ a proof of concept - a starting point for bigger things.
+The algorithm is presently incapable of outperforming standard compression utilities like _gzip_ and _xz_. However, it works. We see it, therefore, as _only_ a proof of concept - a starting point for bigger things.
 
 ## Window decomposition
-Consider, in a universe of size 3, a window of five elements, say $[y, y, x, z, z]$. We can project this window on to three bitsets (in ascending order): $[00100]\_{x}$, $[11000]\_{y}$, and $[00011]\_{z}$. Rather than use these bitsets of equal length as input to a bitset compressor, we can fist perform a reduction. A simple scheme involves removing bitset positions from previous bitsets: $[00100]\_{\bar{x}}$, $[1100]\_{\bar{y}}$, and $[11]\_{\bar{z}}$. Such a scheme is reversible.
+Consider, in a universe of size 3, a window of five elements, say $[y, y, x, z, z]$. We can project this window onto three bitsets (in ascending order): $[00100]\_{x}$, $[11000]\_{y}$, and $[00011]\_{z}$. Rather than use these bitsets of equal length as input to a bitset compressor, we can fist perform a reduction. A simple scheme involves removing bitset positions from previous bitsets: $[00100]\_{\bar{x}}$, $[1100]\_{\bar{y}}$, and $[11]\_{\bar{z}}$. Such a scheme is reversible.
 
 In practice, we deal with byte windows which have a universe size of 256, but the methodology is similar to the synthetic example above. If each byte present in a byte window can be representled by a sparse (and diminishing) bitset, then these bitsets can be compressed and stored as a concatentation, potentially with fewer bytes than the original byte window.
 
