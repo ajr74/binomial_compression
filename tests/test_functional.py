@@ -17,9 +17,9 @@ def test_roundtrips():
     cache = Binomial(1001)
     for i in range(0, 10):
         n = random.randint(500, 1000)
-        random_bytes = random_sparse_bytes(n)
+        input_bytes = random_sparse_bytes(n)
         compressor = WindowCompressor(cache, n)
-        compressed_bytes = compressor.process(random_bytes)
+        compressed_bytes = compressor.process(input_bytes)
         decompressor = WindowDecompressor(cache, n)
         decompressed_bytes = decompressor.process(compressed_bytes)
-        assert decompressed_bytes == random_bytes
+        assert decompressed_bytes == input_bytes
