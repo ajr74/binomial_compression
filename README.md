@@ -47,6 +47,7 @@ The file format is fairly rudimentary. The beginning of the file contains magic 
       -s SIZE, --size SIZE  number of bytes per processing window (default 1024, max 4096)
       -v, --verbose         run verbosely
 
+(Requires Python 3.9.)
 ## Future directions
 - Variable/optimal length byte windows
 - Port from Python to C++
