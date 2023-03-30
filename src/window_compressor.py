@@ -47,8 +47,7 @@ class WindowCompressor:
         for byte_val in range(0, 256):
             to_add = byte_positions[byte_val]
             if len(to_add) > 0:
-                bitset = bitarray(num_bytes)
-                bitset.setall(0)
+                bitset = ba_util.zeros(num_bytes)
                 for i in to_add:
                     bitset[i] = 1
                 for i in to_remove:

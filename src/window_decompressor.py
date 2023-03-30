@@ -23,8 +23,7 @@ class WindowDecompressor:
         :param num_bits: the number of bits for the resultant bitarray.
         :return: the decompressed index as a bitarray.
         """
-        result = bitarray(num_bits)
-        result.setall(0)
+        result = ba_util.zeros(num_bits)
 
         if k_val == 1:
             result[index] = 1
@@ -98,8 +97,7 @@ class WindowDecompressor:
             byte_val += 1
         assert k_cum == num_window_bytes
 
-        occupied_positions = bitarray(num_window_bytes)
-        occupied_positions.setall(0)
+        occupied_positions = ba_util.zeros(num_window_bytes)
         rehydrated_bytes = bytearray(num_window_bytes)
         for byte_val, bitset in byte_bitsets:
             inner_i = 0
