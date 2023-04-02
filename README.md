@@ -52,6 +52,7 @@ The file format is fairly rudimentary. The beginning of the file contains magic 
 - Variable/optimal length byte windows
 - Port from Python to C++
 - Parallelisation
+- Somehow use [Gosper's Hack](http://programmingforinsomniacs.blogspot.com/2018/03/gospers-hack-explained.html) for ranking/unranking?
 
 ## References
 
