@@ -41,3 +41,9 @@ def test_get_index_set_low_cardinality():
 
 def test_get_index_set_high_cardinality():
     assert util.get_index_set(bitarray('11101001111')) == [0, 1, 2, 4, 7, 8, 9, 10]
+
+
+def test_gosper_rank():
+    assert util.gosper_rank(bitarray('000111')) == 19
+    assert util.gosper_rank(bitarray('010110')) == 13
+    assert util.gosper_rank(bitarray('111000')) == 0

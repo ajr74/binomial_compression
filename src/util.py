@@ -98,3 +98,23 @@ def get_index_set2(bitset: bitarray) -> list:
     :return: the index set of the supplied bitarray object.
     """
     return [index for index, b in enumerate(bitset) if b]
+
+def gosper_rank(bitset: bitarray) -> int:
+    """
+    Use Gosper's Hack to rank the supplied bitset. The rank is simply the number of iterations before reaching the
+    limit. For example, bitset 010110 requires 13 iterations before reaching the limit of 111000.
+
+    :param bitset: the bitset of interest.
+    :return: the rank of the supplied bitset.
+    """
+    mask = ba_util.ba2int(bitset)
+    limit = (1 << len(bitset))
+    result = -1
+    while mask < limit:
+        result += 1
+        #  Gosper's hack:
+        c = mask & -mask
+        r = mask + c
+        mask = int(((r ^ mask) >> 2) / c) | r
+    return result
+
