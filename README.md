@@ -6,7 +6,7 @@ The algorithm is presently incapable of outperforming standard compression utili
 ## Window decomposition
 Consider, in a universe of size 3, a window of five elements, say $[y, y, x, z, z]$. We can project this window onto three bitsets (in ascending order): $[00100]\_{x}$, $[11000]\_{y}$, and $[00011]\_{z}$. Rather than use these bitsets of equal length as input to a bitset compressor, we can fist perform a reduction. A simple scheme involves removing bitset positions from previous bitsets: $[00100]\_{\bar{x}}$, $[1100]\_{\bar{y}}$, and $[11]\_{\bar{z}}$. Such a scheme is reversible.
 
-In practice, we deal with byte windows which have a universe size of 256, but the methodology is similar to the synthetic example above. If each byte present in a byte window can be representled by a sparse (and diminishing) bitset, then these bitsets can be compressed and stored as a concatentation, potentially with fewer bytes than the original byte window.
+In practice, we deal with byte windows which have a universe size of 256, but the methodology is similar to the synthetic example above. If each byte present in a byte window can be represented by a sparse (and diminishing) bitset, then these bitsets can be compressed and stored as a concatentation, potentially with fewer bytes than the original byte window.
 
 ## Bitset ranking
 One way to compress a bitset is to consider its length, $N$ say, and its population count, $k$ say. With $N$ and $k$ we can compute a _rank_ for this bitset from the positions of the bitset's populated bits. If this computed rank (and any info required to support it, _e.g._, $k$) can be stored with fewer bits than the original bitset, then we have compression.
