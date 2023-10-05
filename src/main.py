@@ -77,7 +77,7 @@ if __name__ == '__main__':
             os.remove(d_input_path)
 
     else:
-        bytes_per_window = args.size if 0 < args.size < DEFAULT_WINDOW_SIZE else DEFAULT_WINDOW_SIZE
+        bytes_per_window = args.size if 0 < args.size < MAX_WINDOW_SIZE else DEFAULT_WINDOW_SIZE
         num_bits_for_bytes_per_window = util.num_bits_required_to_represent(bytes_per_window)
         cache_tic = time.perf_counter()
         cache = Binomial(bytes_per_window + 1)

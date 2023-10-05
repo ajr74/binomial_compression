@@ -72,7 +72,7 @@ def num_bits_required_to_represent(value: int) -> int:
     return 1 if value == 0 or value == 1 else math.floor(math.log2(value)) + 1
 
 
-def get_index_set(bitset: bitarray) -> list:
+def get_index_set_old1(bitset: bitarray) -> list:
     """
     Gets the index set of the supplied bitarray object. (A list of positions of "on" bits of the bitarray.)
 
@@ -89,8 +89,25 @@ def get_index_set(bitset: bitarray) -> list:
     index_vals.reverse()
     return index_vals
 
+def get_index_set(bitset: bitarray) -> list:
+    """
+    Gets the index set of the supplied bitarray object. (A list of positions of "on" bits of the bitarray.)
 
-def get_index_set2(bitset: bitarray) -> list:
+    :param bitset: the bitarray of interest.
+    :return: the index set of the supplied bitarray object.
+    """
+    index_vals = []
+    index = 0
+    while True:
+        index = bitset.find(1, index)
+        if index == -1:
+            break
+        index_vals.append(index)
+        index += 1
+
+    return index_vals
+
+def get_index_set_old2(bitset: bitarray) -> list:
     """
     A seemingly slower variant of get_index_set().
 
@@ -98,6 +115,35 @@ def get_index_set2(bitset: bitarray) -> list:
     :return: the index set of the supplied bitarray object.
     """
     return [index for index, b in enumerate(bitset) if b]
+
+def int_to_bitarray(value: int, length: int) -> bitarray:
+    """
+    Represents the supplied integer as a bitarray.
+
+    :param value: the integer value of interest.
+    :param length: the desired length of the returned bitarray.
+    :return: a bitarray representing the supplied integer value.
+    """
+    #return  ba_util.int2ba(value, length)
+    return bitarray(format(value, f'0{length}b'))
+
+def bitarray_to_int(bitset: bitarray) -> int:
+    """
+    Interprets the supplied bitarray as an integer value.
+
+    :param bitset: the bitarray of interest.
+    :return: the integer value associated with the supplied bitarray.
+    """
+    #return ba_util.ba2int(bitset)
+    result = 0
+    i = len(bitset) - 1
+    for bit in bitset:
+        if bit:
+            result |= (bit << i)
+        i -= 1
+    return result
+
+
 
 def gosper_rank(bitset: bitarray) -> int:
     """

@@ -47,3 +47,19 @@ def test_gosper_rank():
     assert util.gosper_rank(bitarray('000111')) == 19
     assert util.gosper_rank(bitarray('010110')) == 13
     assert util.gosper_rank(bitarray('111000')) == 0
+
+
+def test_bitarray_to_int_zero():
+    assert util.bitarray_to_int(bitarray('00000')) == 0
+
+
+def test_bitarray_to_int_nonzero():
+    assert util.bitarray_to_int(bitarray('01100010001110101011000111')) == 25750215
+
+
+def test_int_to_bitarray_zero():
+    assert util.int_to_bitarray(0, 5) == bitarray('00000')
+
+
+def test_int_to_bitarray_non_zero():
+    assert util.int_to_bitarray(25750215, 28) == bitarray('0001100010001110101011000111')

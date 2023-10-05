@@ -24,8 +24,7 @@ class WindowCompressor:
         num_bytes = len(input_bytes)
         num_bits_for_num_bytes = util.num_bits_required_to_represent(num_bytes)
 
-        result = bitarray()
-        result += ba_util.int2ba(num_bytes, self.max_num_bits_for_window_size)
+        result = util.int_to_bitarray(num_bytes, self.max_num_bits_for_window_size)
 
         byte_positions = []
         for _ in range(0, 256):
@@ -57,7 +56,7 @@ class WindowCompressor:
                 byte_bitsets.append((byte_val, bitset))
 
         num_bits_for_k = util.num_bits_required_to_represent(max(byte_counts))
-        num_bits_for_k_bitarray = ba_util.int2ba(num_bits_for_k, num_bits_for_num_bytes)
+        num_bits_for_k_bitarray = util.int_to_bitarray(num_bits_for_k, num_bits_for_num_bytes)
         result += num_bits_for_k_bitarray
 
         k_cum = 0
@@ -71,7 +70,7 @@ class WindowCompressor:
 
             k = len(pos_list)
             max_payload_bits = util.num_bits_required_to_represent(self.bc_cache.get(num_bytes - k_cum, k))
-            appendable_data = ba_util.int2ba(k, num_bits_for_k) + ba_util.int2ba(compression_index, max_payload_bits)
+            appendable_data = util.int_to_bitarray(k, num_bits_for_k) + util.int_to_bitarray(compression_index, max_payload_bits)
             result += appendable_data
             k_cum += k
 

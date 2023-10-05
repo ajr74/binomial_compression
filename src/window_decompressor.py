@@ -54,7 +54,7 @@ class WindowDecompressor:
 
         start = 0
         finish = self.max_num_bits_for_window_size
-        num_window_bytes = ba_util.ba2int(input_bits[start:finish])
+        num_window_bytes = util.bitarray_to_int(input_bits[start:finish])
         num_bits_for_max_k = util.num_bits_required_to_represent(num_window_bytes)
 
         start = finish
@@ -63,7 +63,7 @@ class WindowDecompressor:
 
         start = finish
         finish += num_bits_for_max_k
-        num_bits_for_each_k_val = ba_util.ba2int(input_bits[start:finish])
+        num_bits_for_each_k_val = util.bitarray_to_int(input_bits[start:finish])
 
         byte_val = 0
         byte_bitsets = []
@@ -77,12 +77,12 @@ class WindowDecompressor:
                     # read k
                     start = finish
                     finish += num_bits_for_each_k_val
-                    k = ba_util.ba2int(input_bits[start:finish])
+                    k = util.bitarray_to_int(input_bits[start:finish])
                     max_payload_bits = util.num_bits_required_to_represent(self.bc_cache.get(num_window_bytes - k_cum, k))
                     # read compression index
                     start = finish
                     finish += max_payload_bits
-                    compression_index = ba_util.ba2int(input_bits[start:finish])
+                    compression_index = util.bitarray_to_int(input_bits[start:finish])
                     result = self.compression_index_to_bitarray(compression_index, k, num_window_bytes - k_cum)
                     byte_bitsets.append((byte_val, result))
                     k_cum += k
