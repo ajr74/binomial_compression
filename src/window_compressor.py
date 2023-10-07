@@ -29,33 +29,39 @@ class WindowCompressor:
         byte_positions = []
         for _ in range(0, 256):
             byte_positions.append([])
-        byte_counts = [0] * 256
         position = 0
         for b in input_bytes:
-            byte_counts[b] += 1
             byte_positions[b].append(position)
             position += 1
 
         existence_bitarray = bitarray()
-        for c in byte_counts:
-            existence_bitarray.append(c > 0)
+        max_byte_count = 0
+        for bp in byte_positions:
+            _len = len(bp)
+            if _len > max_byte_count:
+                max_byte_count = _len
+            existence_bitarray.append(_len > 0)
+
         result += existence_bitarray
 
         byte_bitsets = []
         to_remove = []
+        zeroes_bitset = ba_util.zeros(num_bytes)
         for byte_val in range(0, 256):
             to_add = byte_positions[byte_val]
             if len(to_add) > 0:
-                bitset = ba_util.zeros(num_bytes)
+                bitset = zeroes_bitset.copy()
                 for i in to_add:
                     bitset[i] = 1
-                for i in to_remove:
+                for i in to_remove[::-1]:  # delete from the back to maintain indexing
                     del bitset[i]
+                avoid_sorting = len(to_remove) == 0 or to_add[0] > to_remove[-1]
                 to_remove += to_add
-                to_remove.sort(reverse=True)  # maintain in descending order to avoid reindexing as we delete
+                if not avoid_sorting:
+                    to_remove.sort()
                 byte_bitsets.append((byte_val, bitset))
 
-        num_bits_for_k = util.num_bits_required_to_represent(max(byte_counts))
+        num_bits_for_k = util.num_bits_required_to_represent(max_byte_count)
         num_bits_for_k_bitarray = util.int_to_bitarray(num_bits_for_k, num_bits_for_num_bytes)
         result += num_bits_for_k_bitarray
 
