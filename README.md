@@ -27,7 +27,7 @@ $$p(b,i)=\max_j\binom{j}{i}, \text{s.t.}\binom{j}{i}\leqslant r(b)-\sum^{k}_{\el
 
 where $i=k,...,1$.
 
-Note: ranking/unranking heavily depend on binomial coefficients. Rather than compute these quantities on demand (a potentially expensive proposition), they can be efficiently pre-computed using [Pascal's Rule](https://en.wikipedia.org/wiki/Pascal%27s_rule).
+Note: ranking/unranking heavily depend on binomial coefficients. Rather than compute these quantities on demand (a potentially expensive proposition), they can be efficiently pre-computed using [Pascal's Rule](https://en.wikipedia.org/wiki/Pascal%27s_rule). For small window size, gmpy2.bincoef is sufficiently fast.
 
 ## Compressed file spec
 The file format is fairly rudimentary. The beginning of the file contains magic bytes and the number of uncompressed bytes for each window. Then a succession of compressed windows. The end of the file contains the MD5 digest of the original.

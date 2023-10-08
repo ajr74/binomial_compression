@@ -1,7 +1,7 @@
+import gmpy2
 from bitarray import bitarray
 
 import util
-from binomial import Binomial
 
 
 class WindowCompressor:
@@ -9,8 +9,7 @@ class WindowCompressor:
     A compressor for a window of arbitrary bytes.
     """
 
-    def __init__(self, binomial_coefficient_cache: Binomial, num_bytes_for_uncompressed_window: int):
-        self.bc_cache = binomial_coefficient_cache
+    def __init__(self, num_bytes_for_uncompressed_window: int):
         self.max_num_bits_for_window_size = util.num_bits_required_to_represent(num_bytes_for_uncompressed_window)
 
     def process(self, input_bytes: bytes) -> bytes:
@@ -42,8 +41,11 @@ class WindowCompressor:
             existence_bitarray.append(_len > 0)
 
         result += existence_bitarray
+        num_bits_for_k = util.num_bits_required_to_represent(max_byte_count)
+        num_bits_for_k_bitarray = util.int_to_bitarray(num_bits_for_k, num_bits_for_num_bytes)
+        result += num_bits_for_k_bitarray
 
-        byte_bitsets = []
+        index_sets = []
         to_remove = util.empty_bitarray(num_bytes)
         for byte_val in range(256):
             if existence_bitarray[byte_val]:
@@ -52,23 +54,18 @@ class WindowCompressor:
                 to_remove2 = to_remove | bitset
                 del bitset[to_remove]
                 to_remove = to_remove2
-                byte_bitsets.append((byte_val, bitset))
-
-        num_bits_for_k = util.num_bits_required_to_represent(max_byte_count)
-        num_bits_for_k_bitarray = util.int_to_bitarray(num_bits_for_k, num_bits_for_num_bytes)
-        result += num_bits_for_k_bitarray
+                index_sets.append(util.get_index_set(bitset))
 
         k_cum = 0
-        for _, bitset in byte_bitsets[:-1]:  # last element can be handled by inference
+        for index_set in index_sets[:-1]: # last element can be handled by inference
             compression_index = 0
-            pos_list = util.get_index_set(bitset)
             j = 1
-            for position in pos_list:
-                compression_index += self.bc_cache.get(position, j)
+            for position in index_set:
+                compression_index += gmpy2.bincoef(position, j)
                 j += 1
 
-            k = len(pos_list)
-            max_payload_bits = util.num_bits_required_to_represent(self.bc_cache.get(num_bytes - k_cum, k))
+            k = len(index_set)
+            max_payload_bits = util.num_bits_required_to_represent(gmpy2.bincoef(num_bytes - k_cum, k))
             appendable_data = util.int_to_bitarray(k, num_bits_for_k) + util.int_to_bitarray(compression_index, max_payload_bits)
             result += appendable_data
             k_cum += k

@@ -1,8 +1,36 @@
+import gmpy2
 from bitarray import bitarray
-from bitarray import util as ba_util
 
 import util
-from binomial import Binomial
+
+
+def compression_index_to_bitarray(index: int, k_val: int, num_bits: int) -> bitarray:
+    """
+    Converts the supplied compression index to a decompressed bitarray.
+
+    :param index: the index value of interest.
+    :param k_val: the k parameter of interest.
+    :param num_bits: the number of bits for the resultant bitarray.
+    :return: the decompressed index as a bitarray.
+    """
+    result = util.empty_bitarray(num_bits)
+
+    if k_val == 1:
+        result[index] = 1
+        return result
+
+    target = index
+    start = num_bits - 1
+    for i in range(k_val, 0, -1):
+        for j in range(start, -1, -1):
+            b = gmpy2.bincoef(j, i)
+            if b <= target:
+                result[j] = 1
+                start = j
+                target -= b
+                break
+        start -= 1
+    return result
 
 
 class WindowDecompressor:
@@ -10,37 +38,8 @@ class WindowDecompressor:
     A decompressor for a window of compressed bytes.
     """
 
-    def __init__(self, binomial_coefficient_cache: Binomial, num_bytes_for_uncompressed_window: int):
-        self.bc_cache = binomial_coefficient_cache
+    def __init__(self, num_bytes_for_uncompressed_window: int):
         self.max_num_bits_for_window_size = util.num_bits_required_to_represent(num_bytes_for_uncompressed_window)
-
-    def compression_index_to_bitarray(self, index: int, k_val: int, num_bits: int) -> bitarray:
-        """
-        Converts the supplied compression index to a decompressed bitarray.
-
-        :param index: the index value of interest.
-        :param k_val: the k parameter of interest.
-        :param num_bits: the number of bits for the resultant bitarray.
-        :return: the decompressed index as a bitarray.
-        """
-        result = ba_util.zeros(num_bits)
-
-        if k_val == 1:
-            result[index] = 1
-            return result
-
-        target = index
-        start = num_bits - 1
-        for i in range(k_val, 0, -1):
-            for j in range(start, -1, -1):
-                b = self.bc_cache.get(j, i)
-                if b <= target:
-                    result[j] = 1
-                    start = j
-                    target -= b
-                    break
-            start -= 1
-        return result
 
     def process(self, input_bytes: bytes) -> bytes:
         """
@@ -78,12 +77,12 @@ class WindowDecompressor:
                     start = finish
                     finish += num_bits_for_each_k_val
                     k = util.bitarray_to_int(input_bits[start:finish])
-                    max_payload_bits = util.num_bits_required_to_represent(self.bc_cache.get(num_window_bytes - k_cum, k))
+                    max_payload_bits = util.num_bits_required_to_represent(gmpy2.bincoef(num_window_bytes - k_cum, k))
                     # read compression index
                     start = finish
                     finish += max_payload_bits
                     compression_index = util.bitarray_to_int(input_bits[start:finish])
-                    result = self.compression_index_to_bitarray(compression_index, k, num_window_bytes - k_cum)
+                    result = compression_index_to_bitarray(compression_index, k, num_window_bytes - k_cum)
                     byte_bitsets.append((byte_val, result))
                     k_cum += k
                 else:
@@ -97,7 +96,7 @@ class WindowDecompressor:
             byte_val += 1
         assert k_cum == num_window_bytes
 
-        occupied_positions = ba_util.zeros(num_window_bytes)
+        occupied_positions = util.empty_bitarray(num_window_bytes)
         rehydrated_bytes = bytearray(num_window_bytes)
         for byte_val, bitset in byte_bitsets:
             inner_i = 0

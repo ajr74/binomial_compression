@@ -1,12 +1,10 @@
 import argparse
 import os
 import sys
-import time
 
 from alive_progress import alive_bar
 
 import util
-from binomial import Binomial
 from bytes_analyser import BytesAnalyser
 from window_compressor import WindowCompressor
 from window_decompressor import WindowDecompressor
@@ -44,12 +42,7 @@ if __name__ == '__main__':
             if magic == MAGIC_BYTES:
                 bytes_per_window = util.read_val(d_input_file, d_in_analyser)
                 bar(util.NUM_BYTES_FOR_PERSISTED_PARAMETERS)
-                cache_tic = time.perf_counter()
-                cache = Binomial(bytes_per_window + 1)
-                cache_toc = time.perf_counter()
-                if args.verbose:
-                    print(f'Precomputed binomial coefficients in {cache_toc - cache_tic:0.3f}s')
-                decompressor = WindowDecompressor(cache, bytes_per_window)
+                decompressor = WindowDecompressor(bytes_per_window)
                 d_out_analyser = BytesAnalyser()
                 with open(d_output_path, 'wb') as d_output_file:
                     size = util.read_val(d_input_file, d_in_analyser)
@@ -79,18 +72,13 @@ if __name__ == '__main__':
     else:
         bytes_per_window = args.size if 0 < args.size < MAX_WINDOW_SIZE else DEFAULT_WINDOW_SIZE
         num_bits_for_bytes_per_window = util.num_bits_required_to_represent(bytes_per_window)
-        cache_tic = time.perf_counter()
-        cache = Binomial(bytes_per_window + 1)
-        cache_toc = time.perf_counter()
-        if args.verbose:
-            print(f"Precomputed binomial coefficients in {cache_toc - cache_tic:0.3f}s")
 
         c_input_path = args.file
         file_size = os.stat(c_input_path).st_size
         c_output_path = c_input_path + COMPRESSED_EXT
         c_in_analyser = BytesAnalyser()
         c_out_analyser = BytesAnalyser()
-        compressor = WindowCompressor(cache, bytes_per_window)
+        compressor = WindowCompressor(bytes_per_window)
 
         with alive_bar(file_size, title='Compressed', enrich_print=False, max_cols=220, bar='circles',
                        force_tty=True, unit='b', disable=not args.verbose) as bar,\
