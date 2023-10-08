@@ -18,6 +18,9 @@ def test_num_bits_required_to_represent_small():
 def test_num_bits_required_to_represent_medium():
     assert util.num_bits_required_to_represent(58836830) == 26
 
+def test_num_bits_required_to_represent_power_of_2():
+    assert util.num_bits_required_to_represent(32768) == 16
+
 
 def test_num_bits_required_to_represent_large():
     assert util.num_bits_required_to_represent(908982380823098239287298972983923) == 110
