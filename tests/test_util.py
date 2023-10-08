@@ -63,3 +63,9 @@ def test_int_to_bitarray_zero():
 
 def test_int_to_bitarray_non_zero():
     assert util.int_to_bitarray(25750215, 28) == bitarray('0001100010001110101011000111')
+
+
+def test_empty_bitarray():
+    bitset = util.empty_bitarray(17)
+    assert bitset.count(1) == 0
+    assert bitset.count(0) == 17

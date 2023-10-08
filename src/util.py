@@ -74,7 +74,8 @@ def num_bits_required_to_represent(value: int) -> int:
 
 def get_index_set_old1(bitset: bitarray) -> list:
     """
-    Gets the index set of the supplied bitarray object. (A list of positions of "on" bits of the bitarray.)
+    Gets the index set of the supplied bitarray object. (A list of positions of "on" bits of the bitarray.) This
+    implementation travels right -> left.
 
     :param bitset: the bitarray of interest.
     :return: the index set of the supplied bitarray object.
@@ -91,7 +92,8 @@ def get_index_set_old1(bitset: bitarray) -> list:
 
 def get_index_set(bitset: bitarray) -> list:
     """
-    Gets the index set of the supplied bitarray object. (A list of positions of "on" bits of the bitarray.)
+    Gets the index set of the supplied bitarray object. (A list of positions of "on" bits of the bitarray.) This
+    implementation travels left -> right.
 
     :param bitset: the bitarray of interest.
     :return: the index set of the supplied bitarray object.
@@ -143,7 +145,16 @@ def bitarray_to_int(bitset: bitarray) -> int:
         i -= 1
     return result
 
-
+def empty_bitarray(length: int) -> bitarray:
+    """
+    Generate an empty bitarray object.
+    :param length: the length of interest.
+    :return: an empty bitarray.
+    """
+    #return ba_util.zeros(length)
+    bitset = bitarray(length)
+    bitset.setall(0)
+    return bitset
 
 def gosper_rank(bitset: bitarray) -> int:
     """

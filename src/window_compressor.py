@@ -1,5 +1,4 @@
 from bitarray import bitarray
-from bitarray import util as ba_util
 
 import util
 from binomial import Binomial
@@ -27,7 +26,7 @@ class WindowCompressor:
         result = util.int_to_bitarray(num_bytes, self.max_num_bits_for_window_size)
 
         byte_positions = []
-        for _ in range(0, 256):
+        for _ in range(256):
             byte_positions.append([])
         position = 0
         for b in input_bytes:
@@ -45,20 +44,14 @@ class WindowCompressor:
         result += existence_bitarray
 
         byte_bitsets = []
-        to_remove = []
-        zeroes_bitset = ba_util.zeros(num_bytes)
-        for byte_val in range(0, 256):
-            to_add = byte_positions[byte_val]
-            if len(to_add) > 0:
-                bitset = zeroes_bitset.copy()
-                for i in to_add:
-                    bitset[i] = 1
-                for i in to_remove[::-1]:  # delete from the back to maintain indexing
-                    del bitset[i]
-                avoid_sorting = len(to_remove) == 0 or to_add[0] > to_remove[-1]
-                to_remove += to_add
-                if not avoid_sorting:
-                    to_remove.sort()
+        to_remove = util.empty_bitarray(num_bytes)
+        for byte_val in range(256):
+            if existence_bitarray[byte_val]:
+                bitset = util.empty_bitarray(num_bytes)
+                bitset[byte_positions[byte_val]] = 1
+                to_remove2 = to_remove | bitset
+                del bitset[to_remove]
+                to_remove = to_remove2
                 byte_bitsets.append((byte_val, bitset))
 
         num_bits_for_k = util.num_bits_required_to_represent(max_byte_count)
