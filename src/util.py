@@ -1,5 +1,3 @@
-import math
-
 from bitarray import bitarray
 from bitarray import util as ba_util
 
@@ -69,7 +67,10 @@ def num_bits_required_to_represent(value: int) -> int:
     :param value: the integer value of interest.
     :return: the number of bits required to represent the supplied integer value.
     """
-    return 1 if value == 0 or value == 1 else math.floor(math.log2(value)) + 1
+    #return 1 if value == 0 or value == 1 else math.floor(math.log2(value)) + 1
+    #return 1 if value < 2 else int(gmpy2.floor(gmpy2.log2(value))) + 1  ## slower, but handles big numbers
+    return 1 if value < 2 else value.bit_length()
+
 
 
 def get_index_set_old1(bitset: bitarray) -> list:

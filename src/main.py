@@ -15,8 +15,8 @@ DEFAULT_WINDOW_SIZE = 1024
 MAX_WINDOW_SIZE = 4096
 MD5_DIGEST_SIZE = 16
 
-if __name__ == '__main__':
 
+def main():
     parser = argparse.ArgumentParser(description='Compress/decompress a file')
     parser.add_argument('file', help='the file to process')
     parser.add_argument('-d', '--decompress', action='store_true', help='run in decompression mode')
@@ -101,3 +101,6 @@ if __name__ == '__main__':
 
         if not args.keep:
             os.remove(c_input_path)
+
+if __name__ == '__main__':
+    main()
