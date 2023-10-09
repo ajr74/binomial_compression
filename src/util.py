@@ -71,53 +71,14 @@ def num_bits_required_to_represent(value: int) -> int:
     #return 1 if value < 2 else int(gmpy2.floor(gmpy2.log2(value))) + 1  ## slower, but handles big numbers
     return 1 if value < 2 else value.bit_length()
 
-
-
-def get_index_set_old1(bitset: bitarray) -> list:
-    """
-    Gets the index set of the supplied bitarray object. (A list of positions of "on" bits of the bitarray.) This
-    implementation travels right -> left.
-
-    :param bitset: the bitarray of interest.
-    :return: the index set of the supplied bitarray object.
-    """
-    index_vals = []
-    count = bitset.count()
-    index = len(bitset)
-    while count > 0:
-        index = ba_util.rindex(bitset, 1, 0, index)
-        index_vals.append(index)
-        count -= 1
-    index_vals.reverse()
-    return index_vals
-
 def get_index_set(bitset: bitarray) -> list:
     """
-    Gets the index set of the supplied bitarray object. (A list of positions of "on" bits of the bitarray.) This
-    implementation travels left -> right.
+    Gets the index set of the supplied bitarray object. (A list of positions of "on" bits of the bitarray.)
 
     :param bitset: the bitarray of interest.
     :return: the index set of the supplied bitarray object.
     """
-    index_vals = []
-    index = 0
-    while True:
-        index = bitset.find(1, index)
-        if index == -1:
-            break
-        index_vals.append(index)
-        index += 1
-
-    return index_vals
-
-def get_index_set_old2(bitset: bitarray) -> list:
-    """
-    A seemingly slower variant of get_index_set().
-
-    :param bitset: the bitarray of interest.
-    :return: the index set of the supplied bitarray object.
-    """
-    return [index for index, b in enumerate(bitset) if b]
+    return bitset.search(1)
 
 def int_to_bitarray(value: int, length: int) -> bitarray:
     """
@@ -127,7 +88,7 @@ def int_to_bitarray(value: int, length: int) -> bitarray:
     :param length: the desired length of the returned bitarray.
     :return: a bitarray representing the supplied integer value.
     """
-    #return  ba_util.int2ba(value, length)
+    #return ba_util.int2ba(value, length)
     return bitarray(format(value, f'0{length}b'))
 
 def bitarray_to_int(bitset: bitarray) -> int:
