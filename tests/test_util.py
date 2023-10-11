@@ -1,4 +1,5 @@
 from bitarray import bitarray
+import gmpy2
 
 import util
 
@@ -17,6 +18,7 @@ def test_num_bits_required_to_represent_small():
 
 def test_num_bits_required_to_represent_medium():
     assert util.num_bits_required_to_represent(58836830) == 26
+
 
 def test_num_bits_required_to_represent_power_of_2():
     assert util.num_bits_required_to_represent(32768) == 16
@@ -52,6 +54,10 @@ def test_gosper_rank():
     assert util.gosper_rank(bitarray('111000')) == 0
 
 
+def test_binomial_coefficients_n_less_than_k():
+    assert gmpy2.bincoef(5, 10) == 0
+
+
 def test_bitarray_to_int_zero():
     assert util.bitarray_to_int(bitarray('00000')) == 0
 
@@ -68,7 +74,21 @@ def test_int_to_bitarray_non_zero():
     assert util.int_to_bitarray(25750215, 28) == bitarray('0001100010001110101011000111')
 
 
+def test_int_to_bitstring_zero():
+    assert util.int_to_bitstring(0, 5) == '00000'
+
+
+def test_int_to_bitstring_non_zero():
+    assert util.int_to_bitstring(25750215, 28) == '0001100010001110101011000111'
+
+
 def test_empty_bitarray():
     bitset = util.empty_bitarray(17)
     assert bitset.count(1) == 0
     assert bitset.count(0) == 17
+
+
+def test_fast_max():
+    assert util.fast_max(11, 5) == 11
+    assert util.fast_max(5, 11) == 11
+    assert util.fast_max(11, 11) == 11

@@ -52,7 +52,7 @@ def main():
                         bar(len(payload_bytes))
                         decompressed_bytes = decompressor.process(payload_bytes)
                         util.write_bytes(d_output_file, d_out_analyser, decompressed_bytes)
-                        if d_in_analyser.num_bytes == file_size - MD5_DIGEST_SIZE:
+                        if d_in_analyser.num_bytes == file_size - MD5_DIGEST_SIZE:  # TODO precompute the subtraction
                             published_digest_bytes = util.read_bytes(d_input_file, d_in_analyser, MD5_DIGEST_SIZE)
                             bar(len(published_digest_bytes))
                         size = util.read_val(d_input_file, d_in_analyser)
@@ -71,7 +71,6 @@ def main():
 
     else:
         bytes_per_window = args.size if 0 < args.size < MAX_WINDOW_SIZE else DEFAULT_WINDOW_SIZE
-        num_bits_for_bytes_per_window = util.num_bits_required_to_represent(bytes_per_window)
 
         c_input_path = args.file
         file_size = os.stat(c_input_path).st_size

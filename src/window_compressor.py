@@ -1,5 +1,4 @@
 import gmpy2
-from bitarray import bitarray
 
 import util
 
@@ -24,50 +23,41 @@ class WindowCompressor:
 
         result = util.int_to_bitarray(num_bytes, self.max_num_bits_for_window_size)
 
-        byte_positions = []
-        for _ in range(256):
-            byte_positions.append([])
-        position = 0
-        for b in input_bytes:
+        byte_positions = [[] for _ in range(256)]
+        for position, b in enumerate(input_bytes):
             byte_positions[b].append(position)
-            position += 1
 
-        existence_bitarray = bitarray()
+
+        existence_bitarray = util.empty_bitarray(256)
         max_byte_count = 0
-        for bp in byte_positions:
-            _len = len(bp)
-            if _len > max_byte_count:
-                max_byte_count = _len
-            existence_bitarray.append(_len > 0)
-
-        result += existence_bitarray
-        num_bits_for_k = util.num_bits_required_to_represent(max_byte_count)
-        num_bits_for_k_bitarray = util.int_to_bitarray(num_bits_for_k, num_bits_for_num_bytes)
-        result += num_bits_for_k_bitarray
-
         index_sets = []
         to_remove = util.empty_bitarray(num_bytes)
-        for byte_val in range(256):
-            if existence_bitarray[byte_val]:
+        for i, positions in enumerate(byte_positions):
+            if positions:
+                existence_bitarray[i] = 1
+                max_byte_count = util.fast_max(max_byte_count, len(positions))
                 bitset = util.empty_bitarray(num_bytes)
-                bitset[byte_positions[byte_val]] = 1
+                bitset[positions] = 1
                 to_remove2 = to_remove | bitset
                 del bitset[to_remove]
                 to_remove = to_remove2
                 index_sets.append(util.get_index_set(bitset))
 
+        result += existence_bitarray
+        num_bits_for_k = util.num_bits_required_to_represent(max_byte_count)
+        num_bits_for_k_bitstring = util.int_to_bitstring(num_bits_for_k, num_bits_for_num_bytes)
+        result.extend(num_bits_for_k_bitstring)
+
         k_cum = 0
         for index_set in index_sets[:-1]: # last element can be handled by inference
             compression_index = 0
-            j = 1
-            for position in index_set:
+            for j, position in enumerate(index_set, 1):
                 compression_index += gmpy2.bincoef(position, j)
-                j += 1
+            # Slightly slower:
+            #compression_index = sum(gmpy2.bincoef(position, j) for j, position in enumerate(index_set, 1))
 
             k = len(index_set)
             max_payload_bits = util.num_bits_required_to_represent(gmpy2.bincoef(num_bytes - k_cum, k))
-            appendable_data = util.int_to_bitarray(k, num_bits_for_k) + util.int_to_bitarray(compression_index, max_payload_bits)
-            result += appendable_data
+            result.extend(util.int_to_bitstring(k, num_bits_for_k) + util.int_to_bitstring(compression_index, max_payload_bits))
             k_cum += k
-
         return result.tobytes()

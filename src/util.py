@@ -1,5 +1,6 @@
 from bitarray import bitarray
 from bitarray import util as ba_util
+import numpy as np
 
 from bytes_analyser import BytesAnalyser
 
@@ -91,6 +92,17 @@ def int_to_bitarray(value: int, length: int) -> bitarray:
     #return ba_util.int2ba(value, length)
     return bitarray(format(value, f'0{length}b'))
 
+def int_to_bitstring(value: int, length: int) -> str:
+    """
+    Represents the supplied integer as a bitstring
+
+    :param value: the integer value of interest.
+    :param length: the desired length of the returned string.
+    :return: a bitstring representing the supplied integer value.
+    """
+    return format(value, f'0{length}b')
+    #return np.binary_repr(value, length)
+
 def bitarray_to_int(bitset: bitarray) -> int:
     """
     Interprets the supplied bitarray as an integer value.
@@ -136,4 +148,16 @@ def gosper_rank(bitset: bitarray) -> int:
         r = mask + c
         mask = int(((r ^ mask) >> 2) / c) | r
     return result
+
+
+# Function to find maximum of x and y
+def fast_max(x: int, y: int) -> int:
+    """
+    Compute the maximum of two integers.
+
+    :param x: the first integer of interest.
+    :param y: the second integer of interest.
+    :return: the maximum of the supplied integers.
+    """
+    return x ^ ((x ^ y) & -(x < y))
 
