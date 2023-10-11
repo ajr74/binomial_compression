@@ -1,6 +1,6 @@
 from bitarray import bitarray
 from bitarray import util as ba_util
-import numpy as np
+import gmpy2
 
 from bytes_analyser import BytesAnalyser
 
@@ -70,7 +70,7 @@ def num_bits_required_to_represent(value: int) -> int:
     """
     #return 1 if value == 0 or value == 1 else math.floor(math.log2(value)) + 1
     #return 1 if value < 2 else int(gmpy2.floor(gmpy2.log2(value))) + 1  ## slower, but handles big numbers
-    return 1 if value < 2 else value.bit_length()
+    return 1 if value == 0 else value.bit_length()
 
 def get_index_set(bitset: bitarray) -> list:
     """
@@ -89,8 +89,7 @@ def int_to_bitarray(value: int, length: int) -> bitarray:
     :param length: the desired length of the returned bitarray.
     :return: a bitarray representing the supplied integer value.
     """
-    #return ba_util.int2ba(value, length)
-    return bitarray(format(value, f'0{length}b'))
+    return bitarray(int_to_bitstring(value, length))
 
 def int_to_bitstring(value: int, length: int) -> str:
     """
@@ -100,8 +99,7 @@ def int_to_bitstring(value: int, length: int) -> str:
     :param length: the desired length of the returned string.
     :return: a bitstring representing the supplied integer value.
     """
-    return format(value, f'0{length}b')
-    #return np.binary_repr(value, length)
+    return gmpy2.digits(value,2).zfill(length)
 
 def bitarray_to_int(bitset: bitarray) -> int:
     """
