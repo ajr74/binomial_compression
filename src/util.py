@@ -16,8 +16,6 @@ def write_val(_outfile, _analyser: BytesAnalyser, _val: int):
     :param _analyser: the bytes analyser to update.
     :param _val: the non-negative integer value to write.
     """
-    assert _val >= 0
-    assert _val <= MAX_PERSISTABLE_PARAMETER_VAL
     write_bytes(_outfile, _analyser, _val.to_bytes(NUM_BYTES_FOR_PERSISTED_PARAMETERS, 'big'))
 
 
@@ -112,8 +110,7 @@ def bitarray_to_int(bitset: bitarray) -> int:
     result = 0
     i = len(bitset) - 1
     for bit in bitset:
-        if bit:
-            result |= (bit << i)
+        result |= (bit << i)
         i -= 1
     return result
 
@@ -148,10 +145,9 @@ def gosper_rank(bitset: bitarray) -> int:
     return result
 
 
-# Function to find maximum of x and y
 def fast_max(x: int, y: int) -> int:
     """
-    Compute the maximum of two integers.
+    Compute the maximum of two integers without branching.
 
     :param x: the first integer of interest.
     :param y: the second integer of interest.
