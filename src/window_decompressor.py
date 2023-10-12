@@ -96,16 +96,62 @@ class WindowDecompressor:
             byte_val += 1
         assert k_cum == num_window_bytes
 
-        occupied_positions = util.empty_bitarray(num_window_bytes)
+        # Original::
+        #occupied_positions = util.empty_bitarray(num_window_bytes)
+        #rehydrated_bytes = bytearray(num_window_bytes)
+        #for byte_val, bitset in byte_bitsets:
+        #    inner_i = 0
+        #    for outer_i in range(num_window_bytes):
+        #        if occupied_positions[outer_i]:
+        #            continue
+        #        if bitset[inner_i]:
+        #            rehydrated_bytes[outer_i] = byte_val
+        #            occupied_positions[outer_i] = 1
+        #        inner_i += 1
+
+        # Alternative 1 (fastest)::
+        unoccupied_positions = util.full_bitarray(num_window_bytes)
         rehydrated_bytes = bytearray(num_window_bytes)
         for byte_val, bitset in byte_bitsets:
-            inner_i = 0
-            for outer_i in range(0, num_window_bytes):
-                if occupied_positions[outer_i]:
-                    continue
+            bitset_count = bitset.count(1)
+            num_byte_assignments = 0
+            for inner_i, outer_i in enumerate(util.get_index_set(unoccupied_positions)):
                 if bitset[inner_i]:
+                    num_byte_assignments += 1
                     rehydrated_bytes[outer_i] = byte_val
-                    occupied_positions[outer_i] = 1
-                inner_i += 1
+                    unoccupied_positions[outer_i] = 0
+                    if num_byte_assignments == bitset_count:
+                        break
+
+        # Alternative 2 (fast)::
+        #occupied_positions = util.empty_bitarray(num_window_bytes)
+        #rehydrated_bytes = bytearray(num_window_bytes)
+        #for byte_val, bitset in byte_bitsets:
+        #    for inner_i, outer_i in enumerate(util.get_index_set(~occupied_positions)):
+        #        if bitset[inner_i]:
+        #            rehydrated_bytes[outer_i] = byte_val
+        #            occupied_positions[outer_i] = 1
+
+
+        # Alternative 3 (slowest)::
+        #prev_bitset = util.empty_bitarray(num_window_bytes)
+        #rehydrated_bytes = bytearray(num_window_bytes)
+        #for byte_val, bitset in byte_bitsets:
+        #    for i in util.get_index_set(prev_bitset):
+        #        bitset.insert(i, 0)
+        #    for i in util.get_index_set(bitset):
+        #        rehydrated_bytes[i] = byte_val
+        #    prev_bitset |= bitset
+
+
+        # Alternative 4 (slow)::
+        #prev_index_set = []
+        #rehydrated_bytes = bytearray(num_window_bytes)
+        #for byte_val, bitset in byte_bitsets:
+        #    for i in prev_index_set:
+        #        bitset.insert(i, 0)
+        #    for i in util.get_index_set(bitset):
+        #        rehydrated_bytes[i] = byte_val
+        #        bisect.insort(prev_index_set, i)
 
         return rehydrated_bytes
