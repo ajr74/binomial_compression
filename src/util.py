@@ -125,6 +125,17 @@ def empty_bitarray(length: int) -> bitarray:
     bitset.setall(0)
     return bitset
 
+def full_bitarray(length: int) -> bitarray:
+    """
+    Generate a bitarray object with all bits on.
+    :param length: the length of interest.
+    :return: a bitarray with all bits on.
+    """
+    #return ba_util.zeros(length)
+    bitset = bitarray(length)
+    bitset.setall(1)
+    return bitset
+
 def gosper_rank(bitset: bitarray) -> int:
     """
     Use Gosper's Hack to rank the supplied bitset. The rank is simply the number of iterations before reaching the

@@ -92,3 +92,8 @@ def test_fast_max():
     assert util.fast_max(11, 5) == 11
     assert util.fast_max(5, 11) == 11
     assert util.fast_max(11, 11) == 11
+
+def test_full_bitarray():
+    bitset = util.full_bitarray(13)
+    assert bitset.count(1) == 13
+    assert bitset.count(0) == 0
