@@ -57,8 +57,15 @@ class WindowDecompressor:
         num_bits_for_max_k = util.num_bits_required_to_represent(num_window_bytes)
 
         start = finish
-        finish += 256
-        existence_bitarray = input_bits[start:finish]
+        finish += 9  # 9 bits to cover the inclusive range [0, 256]
+        existence_bitarray_count = util.bitarray_to_int(input_bits[start:finish])
+
+        start = finish
+        finish += util.num_bits_required_to_represent(gmpy2.bincoef(256, existence_bitarray_count))
+        existence_bitarray_compression_index = util.bitarray_to_int(input_bits[start:finish])
+        existence_bitarray = compression_index_to_bitarray(existence_bitarray_compression_index, existence_bitarray_count, 256)
+
+        assert existence_bitarray_count == existence_bitarray.count(1)
 
         start = finish
         finish += num_bits_for_max_k
@@ -68,7 +75,6 @@ class WindowDecompressor:
         byte_bitsets = []
         k_cum = 0
 
-        existence_bitarray_count = existence_bitarray.count()
         counter = 1
         for bit in existence_bitarray:
             if bit:

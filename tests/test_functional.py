@@ -1,22 +1,14 @@
 import random
 
+import byte_util
 import main
 from window_compressor import WindowCompressor
 from window_decompressor import WindowDecompressor
 
-
-def random_sparse_bytes(n: int) -> bytearray:
-    result = bytearray(n)
-    for i in range(0, n):
-        if random.randint(1, 10) > 7:
-            result[i] = random.randint(0, 255)
-    return result
-
-
 def test_roundtrips():
-    for i in range(0, 10):
+    for i in range(25):
         n = random.randint(main.DEFAULT_WINDOW_SIZE, main.MAX_WINDOW_SIZE)
-        input_bytes = random_sparse_bytes(n)
+        input_bytes = byte_util.random_sparse_bytes(n)
         compressor = WindowCompressor(n)
         compressed_bytes = compressor.process(input_bytes)
         decompressor = WindowDecompressor(n)

@@ -2,6 +2,18 @@ import gmpy2
 
 import util
 
+def index_set_to_compression_index(index_set: list) -> int:
+    """
+    Compute a compression index for the index set of a bitarray.
+    :param index_set: the index set of interest.
+    :return: a compression index for the supplied index set.
+    """
+    compression_index = 0
+    for j, position in enumerate(index_set, 1):
+        compression_index += gmpy2.bincoef(position, j)
+    # Slightly slower:
+    # compression_index = sum(gmpy2.bincoef(position, j) for j, position in enumerate(index_set, 1))
+    return compression_index
 
 class WindowCompressor:
     """
@@ -27,14 +39,13 @@ class WindowCompressor:
         for position, b in enumerate(input_bytes):
             byte_positions[b].append(position)
 
-
-        existence_bitarray = util.empty_bitarray(256)
+        existence_index_set = []
         max_byte_count = 0
         index_sets = []
         to_remove = util.empty_bitarray(num_bytes)
-        for i, positions in enumerate(byte_positions):
+        for b, positions in enumerate(byte_positions):
             if positions:
-                existence_bitarray[i] = 1
+                existence_index_set.append(b)
                 max_byte_count = util.fast_max(max_byte_count, len(positions))
                 bitset = util.empty_bitarray(num_bytes)
                 bitset[positions] = 1
@@ -43,19 +54,20 @@ class WindowCompressor:
                 to_remove = to_remove2
                 index_sets.append(util.get_index_set(bitset))
 
-        result += existence_bitarray
+        existence_bitarray_count = len(existence_index_set)
+        max_compression_index_bits = util.num_bits_required_to_represent(gmpy2.bincoef(256, existence_bitarray_count))
+        existence_compression_index = index_set_to_compression_index(existence_index_set)
+        # 9 bits to cover the inclusive range [0, 256] for existence_bitarray_count
+        result.extend(util.int_to_bitstring(existence_bitarray_count, 9) +
+                      util.int_to_bitstring(existence_compression_index, max_compression_index_bits))
+
         num_bits_for_k = util.num_bits_required_to_represent(max_byte_count)
         num_bits_for_k_bitstring = util.int_to_bitstring(num_bits_for_k, num_bits_for_num_bytes)
         result.extend(num_bits_for_k_bitstring)
 
         k_cum = 0
         for index_set in index_sets[:-1]: # last element can be handled by inference
-            compression_index = 0
-            for j, position in enumerate(index_set, 1):
-                compression_index += gmpy2.bincoef(position, j)
-            # Slightly slower:
-            #compression_index = sum(gmpy2.bincoef(position, j) for j, position in enumerate(index_set, 1))
-
+            compression_index = index_set_to_compression_index(index_set)
             k = len(index_set)
             max_payload_bits = util.num_bits_required_to_represent(gmpy2.bincoef(num_bytes - k_cum, k))
             result.extend(util.int_to_bitstring(k, num_bits_for_k) + util.int_to_bitstring(compression_index, max_payload_bits))
