@@ -23,12 +23,41 @@ def compression_index_to_bitarray(index: int, k_val: int, num_bits: int) -> bita
     start = num_bits - 1
     for i in range(k_val, 0, -1):
         for j in range(start, -1, -1):
-            b = gmpy2.bincoef(j, i)
-            if b <= target:
+            if (b := gmpy2.bincoef(j, i)) <= target:
                 result[j] = 1
                 start = j
                 target -= b
                 break
+        start -= 1
+    return result
+
+def compression_index_to_bitarray_experimental(index: int, k_val: int, num_bits: int) -> bitarray:
+    """
+    Converts the supplied compression index to a decompressed bitarray. Uses a generator for binomial coefficients.
+
+    :param index: the index value of interest.
+    :param k_val: the k parameter of interest.
+    :param num_bits: the number of bits for the resultant bitarray.
+    :return: the decompressed index as a bitarray.
+    """
+    result = util.empty_bitarray(num_bits)
+
+    if k_val == 1:
+        result[index] = 1
+        return result
+
+    target = index
+    start = num_bits - 1
+    for i in range(k_val, 0, -1):
+        j_plus_1 = start + 1
+        b = int(gmpy2.bincoef(j_plus_1, i))
+        for j in range(start, -1, -1):
+            if (b := ((j_plus_1-i) * b) // j_plus_1) <= target:
+                result[j] = 1
+                start = j
+                target -= b
+                break
+            j_plus_1 = j
         start -= 1
     return result
 
