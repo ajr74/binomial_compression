@@ -25,10 +25,9 @@ def compression_index_to_bitarray(index: int, k_val: int, num_bits: int) -> bita
         for j in range(start, -1, -1):
             if (b := gmpy2.bincoef(j, i)) <= target:
                 result[j] = 1
-                start = j
+                start = j - 1
                 target -= b
                 break
-        start -= 1
     return result
 
 def compression_index_to_bitarray_experimental(index: int, k_val: int, num_bits: int) -> bitarray:
@@ -54,11 +53,10 @@ def compression_index_to_bitarray_experimental(index: int, k_val: int, num_bits:
         for j in range(start, -1, -1):
             if (b := ((j_plus_1-i) * b) // j_plus_1) <= target:
                 result[j] = 1
-                start = j
+                start = j -1
                 target -= b
                 break
             j_plus_1 = j
-        start -= 1
     return result
 
 
