@@ -66,7 +66,7 @@ class WindowDecompressor:
     """
 
     def __init__(self, num_bytes_for_uncompressed_window: int):
-        self.max_num_bits_for_window_size = util.num_bits_required_to_represent(num_bytes_for_uncompressed_window)
+        self.window_size = num_bytes_for_uncompressed_window
 
     def process(self, input_bytes: bytes) -> bytes:
         """
@@ -79,8 +79,13 @@ class WindowDecompressor:
         input_bits.frombytes(input_bytes)
 
         start = 0
-        finish = self.max_num_bits_for_window_size
-        num_window_bytes = util.bitarray_to_int(input_bits[start:finish])
+        finish = 1
+        if util.bitarray_to_int(input_bits[start:finish]):
+            num_window_bytes = self.window_size
+        else:
+            start = finish
+            finish += util.num_bits_required_to_represent(self.window_size)
+            num_window_bytes = util.bitarray_to_int(input_bits[start:finish])
         num_bits_for_max_k = util.num_bits_required_to_represent(num_window_bytes)
 
         start = finish

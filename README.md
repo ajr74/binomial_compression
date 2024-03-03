@@ -54,6 +54,10 @@ The file format is fairly rudimentary. The beginning of the file contains magic 
 - Parallelisation
 - Somehow use [Gosper's Hack](http://programmingforinsomniacs.blogspot.com/2018/03/gospers-hack-explained.html) for ranking/unranking?
 
+## Other stuff
+
+I am more or less retired from full-time development. But I'm happy to talk to potential employers about niche R&D roles.
+
 ## References
 
 1. [Ranking and Unranking of Combinations and Permutations](https://computationalcombinatorics.wordpress.com/2012/09/10/ranking-and-unranking-of-combinations-and-permutations/), Derrick Stolee (2012).

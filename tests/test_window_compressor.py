@@ -5,7 +5,7 @@ def test_process_same_bytes():
     n = 1024
     compressor = WindowCompressor(n)
     compressed_bytes = compressor.process(byte_util.same_bytes(n, 13))
-    assert compressed_bytes == b'\x80\x00\x10h\x0b'
+    assert compressed_bytes == b'\x80A\xa0,'
 
 def test_process_blocky():
     compressor = WindowCompressor(128)
@@ -14,4 +14,4 @@ def test_process_blocky():
                    byte_util.same_bytes(32, 230) +
                    byte_util.same_bytes(32, 107))
     compressed_bytes = compressor.process(input_bytes)
-    assert compressed_bytes == b"\x80\x026AUh4\x00\x00\x00\x00\x00\x19n\xc9\xf2O\xb0BE\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10e\xbb'\xc9>\xc1\t\x14"
+    assert compressed_bytes == b'\x81\x1b \xaa\xb4\x1a\x00\x00\x00\x00\x00\x0c\xb7d\xf9\'\xd8!"\xc0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x082\xdd\x93\xe4\x9f`\x84\x8a'

@@ -1,5 +1,7 @@
 import gmpy2
 
+from bitarray import bitarray
+
 import util
 
 def index_set_to_compression_index(index_set: list) -> int:
@@ -21,7 +23,7 @@ class WindowCompressor:
     """
 
     def __init__(self, num_bytes_for_uncompressed_window: int):
-        self.max_num_bits_for_window_size = util.num_bits_required_to_represent(num_bytes_for_uncompressed_window)
+        self.window_size = num_bytes_for_uncompressed_window
 
     def process(self, input_bytes: bytes) -> bytes:
         """
@@ -33,7 +35,10 @@ class WindowCompressor:
         num_bytes = len(input_bytes)
         num_bits_for_num_bytes = util.num_bits_required_to_represent(num_bytes)
 
-        result = util.int_to_bitarray(num_bytes, self.max_num_bits_for_window_size)
+        if num_bytes == self.window_size:
+            result = bitarray('1')
+        else:
+            result = bitarray('0') + util.int_to_bitarray(num_bytes, util.num_bits_required_to_represent(self.window_size))
 
         byte_positions = [[] for _ in range(256)]
         for position, b in enumerate(input_bytes):
@@ -65,11 +70,11 @@ class WindowCompressor:
         num_bits_for_k_bitstring = util.int_to_bitstring(num_bits_for_k, num_bits_for_num_bytes)
         result.extend(num_bits_for_k_bitstring)
 
-        k_cum = 0
+        n_payload = num_bytes
         for index_set in index_sets[:-1]: # last element can be handled by inference
             compression_index = index_set_to_compression_index(index_set)
             k = len(index_set)
-            max_payload_bits = util.num_bits_required_to_represent(gmpy2.bincoef(num_bytes - k_cum, k))
+            max_payload_bits = util.num_bits_required_to_represent(gmpy2.bincoef(n_payload, k))
             result.extend(util.int_to_bitstring(k, num_bits_for_k) + util.int_to_bitstring(compression_index, max_payload_bits))
-            k_cum += k
+            n_payload -= k
         return result.tobytes()
