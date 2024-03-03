@@ -56,7 +56,7 @@ The file format is fairly rudimentary. The beginning of the file contains magic 
 
 ## Other stuff
 
-I am more or less retired from full-time development. But I'm happy to talk to potential employers about niche R&D roles.
+I am more or less retired from full-time development. But I'm happy to talk to potential employers about niche R&D roles. rasmusaj at mac dot com
 
 ## References
 
