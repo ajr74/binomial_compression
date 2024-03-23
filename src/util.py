@@ -1,6 +1,6 @@
+import gmpy2
 from bitarray import bitarray
 from bitarray import util as ba_util
-import gmpy2
 
 from bytes_analyser import BytesAnalyser
 
@@ -70,6 +70,7 @@ def num_bits_required_to_represent(value: int) -> int:
     #return 1 if value < 2 else int(gmpy2.floor(gmpy2.log2(value))) + 1  ## slower, but handles big numbers
     return 1 if value == 0 else value.bit_length()
 
+
 def get_index_set(bitset: bitarray) -> list:
     """
     Gets the index set of the supplied bitarray object. (A list of positions of "on" bits of the bitarray.)
@@ -78,6 +79,7 @@ def get_index_set(bitset: bitarray) -> list:
     :return: the index set of the supplied bitarray object.
     """
     return bitset.search(1)
+
 
 def int_to_bitarray(value: int, length: int) -> bitarray:
     """
@@ -89,6 +91,7 @@ def int_to_bitarray(value: int, length: int) -> bitarray:
     """
     return bitarray(int_to_bitstring(value, length))
 
+
 def int_to_bitstring(value: int, length: int) -> str:
     """
     Represents the supplied integer as a bitstring
@@ -97,7 +100,8 @@ def int_to_bitstring(value: int, length: int) -> str:
     :param length: the desired length of the returned string.
     :return: a bitstring representing the supplied integer value.
     """
-    return gmpy2.digits(value,2).zfill(length)
+    return gmpy2.digits(value, 2).zfill(length)
+
 
 def bitarray_to_int(bitset: bitarray) -> int:
     """
@@ -114,16 +118,15 @@ def bitarray_to_int(bitset: bitarray) -> int:
         i -= 1
     return result
 
+
 def empty_bitarray(length: int) -> bitarray:
     """
     Generate an empty bitarray object.
     :param length: the length of interest.
     :return: an empty bitarray.
     """
-    #return ba_util.zeros(length)
-    bitset = bitarray(length)
-    bitset.setall(0)
-    return bitset
+    return bitarray(length)
+
 
 def full_bitarray(length: int) -> bitarray:
     """
@@ -135,6 +138,7 @@ def full_bitarray(length: int) -> bitarray:
     bitset = bitarray(length)
     bitset.setall(1)
     return bitset
+
 
 def gosper_rank(bitset: bitarray) -> int:
     """
@@ -165,4 +169,13 @@ def fast_max(x: int, y: int) -> int:
     :return: the maximum of the supplied integers.
     """
     return x ^ ((x ^ y) & -(x < y))
+
+
+def falling_factorial(x: int, n: int) -> int:
+    if n > x:
+        return 0
+    result = 1
+    for k in range(n):
+        result *= (x - k)
+    return result
 

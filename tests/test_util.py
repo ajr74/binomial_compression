@@ -1,5 +1,5 @@
-from bitarray import bitarray
 import gmpy2
+from bitarray import bitarray
 
 import util
 
@@ -93,7 +93,19 @@ def test_fast_max():
     assert util.fast_max(5, 11) == 11
     assert util.fast_max(11, 11) == 11
 
+
 def test_full_bitarray():
     bitset = util.full_bitarray(13)
     assert bitset.count(1) == 13
     assert bitset.count(0) == 0
+
+
+def test_falling_factorial():
+    assert util.falling_factorial(5, 0) == 1
+    assert util.falling_factorial(5, 1) == 5
+    assert util.falling_factorial(5, 2) == 20
+    assert util.falling_factorial(5, 3) == 60
+    assert util.falling_factorial(5, 4) == 120
+    assert util.falling_factorial(5, 5) == 120
+    assert util.falling_factorial(5, 6) == 0
+    assert util.falling_factorial(5, 42) == 0

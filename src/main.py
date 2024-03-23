@@ -43,6 +43,7 @@ def main():
                 bytes_per_window = util.read_val(d_input_file, d_in_analyser)
                 bar(util.NUM_BYTES_FOR_PERSISTED_PARAMETERS)
                 decompressor = WindowDecompressor(bytes_per_window)
+                existence_bitarray = util.empty_bitarray(256)
                 d_out_analyser = BytesAnalyser()
                 with open(d_output_path, 'wb') as d_output_file:
                     size = util.read_val(d_input_file, d_in_analyser)
@@ -50,7 +51,7 @@ def main():
                         bar(util.NUM_BYTES_FOR_PERSISTED_PARAMETERS)
                         payload_bytes = util.read_bytes(d_input_file, d_in_analyser, size)
                         bar(len(payload_bytes))
-                        decompressed_bytes = decompressor.process(payload_bytes)
+                        decompressed_bytes = decompressor.process(payload_bytes, existence_bitarray)
                         util.write_bytes(d_output_file, d_out_analyser, decompressed_bytes)
                         if d_in_analyser.num_bytes == file_size - MD5_DIGEST_SIZE:  # TODO precompute the subtraction
                             published_digest_bytes = util.read_bytes(d_input_file, d_in_analyser, MD5_DIGEST_SIZE)
@@ -78,6 +79,7 @@ def main():
         c_in_analyser = BytesAnalyser()
         c_out_analyser = BytesAnalyser()
         compressor = WindowCompressor(bytes_per_window)
+        existence_index_set = set()
 
         with alive_bar(file_size, title='Compressed', enrich_print=False, max_cols=220, bar='circles',
                        force_tty=True, unit='b', disable=not args.verbose) as bar,\
@@ -87,7 +89,7 @@ def main():
             in_buffer_bytes = util.read_bytes(c_input_file, c_in_analyser, bytes_per_window)
             while in_buffer_bytes:
                 bar(len(in_buffer_bytes))
-                compressed_bytes = compressor.process(in_buffer_bytes)
+                compressed_bytes = compressor.process(in_buffer_bytes, existence_index_set)
                 util.write_val(c_output_file, c_out_analyser, len(compressed_bytes))
                 util.write_bytes(c_output_file, c_out_analyser, compressed_bytes)
                 in_buffer_bytes = util.read_bytes(c_input_file, c_in_analyser, bytes_per_window)
@@ -100,6 +102,7 @@ def main():
 
         if not args.keep:
             os.remove(c_input_path)
+
 
 if __name__ == '__main__':
     main()
