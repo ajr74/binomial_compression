@@ -1,3 +1,5 @@
+import math
+
 import gmpy2
 from bitarray import bitarray
 from bitarray import util as ba_util
@@ -92,7 +94,7 @@ def int_to_bitarray(value: int, length: int) -> bitarray:
     return bitarray(int_to_bitstring(value, length))
 
 
-def int_to_bitstring(value: int, length: int) -> str:
+def int_to_bitstring(value, length: int) -> str:
     """
     Represents the supplied integer as a bitstring
 
@@ -110,13 +112,13 @@ def bitarray_to_int(bitset: bitarray) -> int:
     :param bitset: the bitarray of interest.
     :return: the integer value associated with the supplied bitarray.
     """
-    #return ba_util.ba2int(bitset)
-    result = 0
-    i = len(bitset) - 1
-    for bit in bitset:
-        result |= (bit << i)
-        i -= 1
-    return result
+    return ba_util.ba2int(bitset)
+    #result = 0
+    #i = len(bitset) - 1
+    #for bit in bitset:
+    #    result |= (bit << i)
+    #    i -= 1
+    #return result
 
 
 def empty_bitarray(length: int) -> bitarray:
@@ -134,10 +136,10 @@ def full_bitarray(length: int) -> bitarray:
     :param length: the length of interest.
     :return: a bitarray with all bits on.
     """
-    #return ba_util.zeros(length)
-    bitset = bitarray(length)
-    bitset.setall(1)
-    return bitset
+    return ba_util.ones(length)
+    #bitset = bitarray(length)
+    #bitset.setall(1)
+    #return bitset
 
 
 def gosper_rank(bitset: bitarray) -> int:
@@ -171,11 +173,10 @@ def fast_max(x: int, y: int) -> int:
     return x ^ ((x ^ y) & -(x < y))
 
 
-def falling_factorial(x: int, n: int) -> int:
+def falling_factorial(x: int, n: int) -> gmpy2.xmpz:
     if n > x:
-        return 0
-    result = 1
+        return gmpy2.xmpz()
+    result = gmpy2.xmpz(1)
     for k in range(n):
         result *= (x - k)
     return result
-

@@ -33,8 +33,9 @@ def main():
         d_input_path = args.file
         d_output_path = d_input_path.removesuffix(COMPRESSED_EXT)
         file_size = os.stat(d_input_path).st_size
+        file_size_minus_md5_digest_size = file_size - MD5_DIGEST_SIZE
         with alive_bar(file_size, title='Decompressed', enrich_print=False, max_cols=220, force_tty=True,
-                       bar='circles', unit='b', disable=not args.verbose) as bar,\
+                       bar='circles', unit='b', disable=not args.verbose) as bar, \
                 open(d_input_path, 'rb') as d_input_file:
             d_in_analyser = BytesAnalyser()
             magic = util.read_bytes(d_input_file, d_in_analyser, len(MAGIC_BYTES))
@@ -53,7 +54,7 @@ def main():
                         bar(len(payload_bytes))
                         decompressed_bytes = decompressor.process(payload_bytes, existence_bitarray)
                         util.write_bytes(d_output_file, d_out_analyser, decompressed_bytes)
-                        if d_in_analyser.num_bytes == file_size - MD5_DIGEST_SIZE:  # TODO precompute the subtraction
+                        if d_in_analyser.num_bytes == file_size_minus_md5_digest_size:
                             published_digest_bytes = util.read_bytes(d_input_file, d_in_analyser, MD5_DIGEST_SIZE)
                             bar(len(published_digest_bytes))
                         size = util.read_val(d_input_file, d_in_analyser)
@@ -82,7 +83,7 @@ def main():
         existence_index_set = set()
 
         with alive_bar(file_size, title='Compressed', enrich_print=False, max_cols=220, bar='circles',
-                       force_tty=True, unit='b', disable=not args.verbose) as bar,\
+                       force_tty=True, unit='b', disable=not args.verbose) as bar, \
                 open(c_input_path, 'rb') as c_input_file, open(c_output_path, 'wb') as c_output_file:
             util.write_bytes(c_output_file, c_out_analyser, MAGIC_BYTES)
             util.write_val(c_output_file, c_out_analyser, bytes_per_window)

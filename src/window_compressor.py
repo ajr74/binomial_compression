@@ -4,13 +4,13 @@ from bitarray import bitarray
 import util
 
 
-def index_set_to_compression_index(index_set: list) -> int:
+def index_set_to_compression_index(index_set: list) -> gmpy2.xmpz:
     """
     Compute a compression index for the index set of a bitarray.
     :param index_set: the index set of interest.
     :return: a compression index for the supplied index set.
     """
-    compression_index = 0
+    compression_index = gmpy2.xmpz()
     for j, position in enumerate(index_set, 1):
         compression_index += gmpy2.bincoef(position, j)
     # Slightly slower:
@@ -18,22 +18,22 @@ def index_set_to_compression_index(index_set: list) -> int:
     return compression_index
 
 
-def index_set_to_compression_index_alternative(index_set: list) -> int:
+def index_set_to_compression_index_alternative(index_set: list) -> gmpy2.xmpz:
     """
     Compute a compression index for the index set of a bitarray. No calls to gmpy2.bincoef, instead falling factorials.
     :param index_set: the index set of interest.
     :return: a compression index for the supplied index set.
     """
     j = len(index_set)
-    compression_index = 0
+    denom = gmpy2.fac(j)
+    compression_index = gmpy2.xmpz()
 
-    multiplier = 1
+    multiplier = gmpy2.xmpz(1)
     for position in reversed(index_set):
         compression_index += (multiplier * util.falling_factorial(position, j))
         multiplier *= j
         j -= 1
-    compression_index //= gmpy2.fac(len(index_set))
-    return compression_index
+    return compression_index // denom
 
 
 class WindowCompressor:
